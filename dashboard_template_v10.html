@@ -10238,7 +10238,7 @@ async function exportPPTX(){
       const topNegP = prodMovers.filter(p=>p.dAbs<0).sort((a,b)=>a.dAbs-b.dAbs)[0];
       if(topPosP || topNegP){
         let mov = '';
-        if(topPosP) mov += `🚀 ${topPosP.n} (+${fmt(topPosP.dAbs)})`;
+        if(topPosP) mov += `${topPosP.n} (+${fmt(topPosP.dAbs)})`;
         if(topNegP) mov += `${topPosP?' · ':''}🔴 ${topNegP.n} (-${fmt(Math.abs(topNegP.dAbs))})`;
         bullets.push({lvl:1, txt:`Movers: ${mov}`});
       }
@@ -10445,9 +10445,9 @@ async function exportPPTX(){
     }
 
     // ============================================================
-    // SLIDE - DECOMPOSIÇÃO DE CRESCIMENTO (só se métrica = BRL/USD)
+    // SLIDE - DECOMPOSIÇÃO DE CRESCIMENTO — REMOVIDO do PPT a pedido
     // ============================================================
-    if(metricaAtual !== 'UNID' && window.__decompResultado){
+    if(false && metricaAtual !== 'UNID' && window.__decompResultado){
       const sDecomp = pptx.addSlide();
       addHeader(sDecomp, `Decomposição de Crescimento · ${mLabel}`);
       const d = window.__decompResultado;
@@ -11594,9 +11594,7 @@ async function exportPPTX(){
       if(prodsSystane.length > 0){
         const sSyst = pptx.addSlide();
         sSyst.background = {color: 'FFFFFF'};
-        sSyst.addText('TENDÊNCIA POR SYSTANE · Últimos 12 meses', {
-          x:0.3, y:0.3, w:12.7, h:0.5, fontSize:18, bold:true, color:AZUL, fontFace:'Open Sans'
-        });
+        addHeader(sSyst, 'Tendência por Systane · Últimos 12 meses');
 
         // Identificar últimos 12 meses
         const periodosDisp = new Set();
@@ -11640,12 +11638,37 @@ async function exportPPTX(){
 
         const prodsComDado = prodsSystane.filter(p => aggProdSy[p].some(v => v > 0));
 
+        // ===== Agregar SELL-OUT dos mesmos produtos Systane nos 12 meses =====
+        const aggProdSyySO = {};
+        for(const p of prodsSystane) aggProdSyySO[p] = new Array(12).fill(0);
+        let temSOSystane = false;
+        if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
+          for(const r of rawDataSellout){
+            const prodSO = r.PRODUTO; if(!prodSO) continue;
+            const upSO = String(prodSO).toUpperCase();
+            if(!upSO.includes('SYSTANE') || upSO.includes('LID WIPES') || upSO.includes('LIDWIPES')) continue;
+            if(!selloutCanalOk(r)) continue;
+            if(!clienteBateFiltroSO(r.GRUPO_PAINEL)) continue;
+            if(franquiasSetSy && !franquiasSetSy.has(String(r.FRANQUIA))) continue;
+            const k = `${r.ANO}-${String(r.MES).padStart(2,'0')}`;
+            if(!(k in idxMapSy)) continue;
+            // casar com o produto Systane equivalente (canon)
+            const alvo = prodsSystane.find(p => canonProduto(p) === canonProduto(prodSO)) ||
+                         prodsSystane.find(p => String(p).toUpperCase() === upSO);
+            if(alvo){ aggProdSyySO[alvo][idxMapSy[k]] += getValorSO(r); temSOSystane = true; }
+          }
+        }
+
         // FAMÍLIA SYSTANE: soma de todos (exceto Lid Wipes, já fora) - primeiro card
-        const FAM_KEY_PPT = '🔷 FAMÍLIA SYSTANE';
+        const FAM_KEY_PPT = 'FAMÍLIA SYSTANE';
         if(prodsComDado.length > 0){
           const famArr = new Array(12).fill(0);
           prodsComDado.forEach(p => aggProdSy[p].forEach((v,i) => famArr[i] += v));
           aggProdSy[FAM_KEY_PPT] = famArr;
+          // família SO
+          const famArrSO = new Array(12).fill(0);
+          prodsComDado.forEach(p => (aggProdSyySO[p]||[]).forEach((v,i) => famArrSO[i] += v));
+          aggProdSyySO[FAM_KEY_PPT] = famArrSO;
           prodsComDado.unshift(FAM_KEY_PPT);
         }
 
@@ -11685,11 +11708,13 @@ async function exportPPTX(){
               const m = +k.split('-')[1];
               return MESES_NOME[m-1];
             });
-            sSyst.addChart(pptx.ChartType.line, [
-              { name: prod, labels: labelsM, values: dadosP }
-            ], {
+            const seriesChart = [{ name: 'Sell-in', labels: labelsM, values: dadosP }];
+            const dadosSO = aggProdSyySO[prod] || [];
+            const temSOprod = dadosSO.some(v => v > 0);
+            if(temSOprod) seriesChart.push({ name: 'Sell-out', labels: labelsM, values: dadosSO });
+            sSyst.addChart(pptx.ChartType.line, seriesChart, {
               x:xM+0.05, y:yM+0.55, w:wMini-0.1, h:hMini-0.7,
-              chartColors: [cor],
+              chartColors: temSOprod ? [cor, '94A3B8'] : [cor],
               showLegend: false,
               showCatAxisTitle: false,
               showValAxisTitle: false,
@@ -11700,6 +11725,13 @@ async function exportPPTX(){
               dataLabelFontSize: 7,
               catAxisLabelFontSize: 6
             });
+            // mini-legenda SI/SO (só no card da família p/ não poluir)
+            if(ehFam && temSOprod){
+              sSyst.addText([
+                {text:'— Sell-in', options:{color:cor, bold:true}},
+                {text:'   — Sell-out', options:{color:'94A3B8', bold:true}}
+              ], {x:xM+0.08, y:yM+hMini-0.28, w:wMini-0.16, h:0.2, fontSize:7, fontFace:'Open Sans'});
+            }
           });
         }
       }
@@ -11709,9 +11741,7 @@ async function exportPPTX(){
     if(rawData && rawData.length > 0 && rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
       const sDiff = pptx.addSlide();
       sDiff.background = {color: 'FFFFFF'};
-      sDiff.addText('🔀 SELL-IN vs SELL-OUT · Diferença · Últimos 12 meses', {
-        x:0.3, y:0.3, w:12.7, h:0.5, fontSize:18, bold:true, color:AZUL, fontFace:'Open Sans'
-      });
+      addHeader(sDiff, 'Sell-in vs Sell-out · Diferença · Últimos 12 meses');
 
       // Filtros
       const clienteSetD = clientesSelecionados.length ? new Set(clientesSelecionados) : null;
@@ -11798,9 +11828,7 @@ async function exportPPTX(){
       // ===== SLIDE 2: mesma visão em UNIDADES =====
       const sDiffU = pptx.addSlide();
       sDiffU.background = {color: 'FFFFFF'};
-      sDiffU.addText('🔀 SELL-IN vs SELL-OUT · Diferença · Últimos 12 meses · UNIDADES', {
-        x:0.3, y:0.3, w:12.7, h:0.5, fontSize:18, bold:true, color:AZUL, fontFace:'Open Sans'
-      });
+      addHeader(sDiffU, 'Sell-in vs Sell-out · Diferença · Últimos 12 meses · Unidades');
       sDiffU.addText(`${labelInicio} a ${labelFim} · Unidades · Filtros: cliente + produto`, {
         x:0.3, y:0.8, w:12.7, h:0.3, fontSize:11, italic:true, color:CINZA, fontFace:'Open Sans'
       });
@@ -11828,9 +11856,7 @@ async function exportPPTX(){
     {
       const sMovers = pptx.addSlide();
       sMovers.background = {color: 'FFFFFF'};
-      sMovers.addText('🚀 MOVERS · Onde estava → Onde está', {
-        x:0.3, y:0.3, w:12.7, h:0.5, fontSize:18, bold:true, color:AZUL, fontFace:'Open Sans'
-      });
+      addHeader(sMovers, 'Movers · Onde estava → Onde está');
       sMovers.addText(`${per.labelComp || 'Comparado'} vs ${per.labelAtual || 'Atual'} · ${METRICAS[metricaAtual].label} · Análise por Franquia`, {
         x:0.3, y:0.8, w:12.7, h:0.3, fontSize:11, italic:true, color:CINZA, fontFace:'Open Sans'
       });
@@ -12159,6 +12185,97 @@ async function exportPPTX(){
           x:0.4, y:7.15, w:12.5, h:0.25, fontSize:8, italic:true, color:CINZA, fontFace:'Open Sans'
         });
       }
+    }
+
+    // ============================================================
+    // SLIDE NOVO - PRODUTOS ACIMA vs ABAIXO DO TARGET (por franquia)
+    // Colunas: Acima do Target | Abaixo do Target
+    // Cada item: nome · %vs TGT · %vs PY · SO vs PY · separado por franquia
+    // ============================================================
+    if(typeof targetsFinanceiros !== 'undefined' && targetsFinanceiros.length > 0 && rawData && rawData.length > 0){
+      const sAT = pptx.addSlide();
+      sAT.background = {color: 'FFFFFF'};
+      addHeader(sAT, `Produtos · Acima vs Abaixo do Target · ${mLabel}`);
+
+      const baseAT = filtrarBase();
+      const campoTgt = ({UNID:'TARGET_UNID', BRL:'TARGET_BRL', USD:'TARGET_USD'})[metricaAtual];
+      const tgtsAT = targetsFinanceiros.filter(t => !franquiasSelecionadas.length || franquiasSelecionadas.includes(t.FRANQUIA));
+      const mesAT = Math.max(...per.meses);
+      const anoAT = per.ano;
+
+      // mapa franquia por produto
+      const frProdAT = {};
+      tgtsAT.forEach(t => { if(t.PRODUTO && t.FRANQUIA) frProdAT[t.PRODUTO] = t.FRANQUIA; });
+      for(const r of baseAT){ const p = r[COLS.PRODUTO]; if(p && !frProdAT[p] && r[COLS.FRANQUIA]) frProdAT[p] = r[COLS.FRANQUIA]; }
+
+      // SO YoY por produto (YTD)
+      const soYTD = {}, soYTDant = {};
+      if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
+        for(const r of rawDataSellout){
+          if(!selloutCanalOk(r)) continue;
+          if(!clienteBateFiltroSO(r.GRUPO_PAINEL)) continue;
+          if(franquiasSelecionadas.length && !franquiasSelecionadas.includes(String(r.FRANQUIA))) continue;
+          const p = r.PRODUTO; if(!p) continue;
+          if(+r.MES > mesAT) continue;
+          if(+r.ANO === anoAT){ soYTD[p] = (soYTD[p]||0) + getValorSO(r); }
+          if(+r.ANO === anoAT-1){ soYTDant[p] = (soYTDant[p]||0) + getValorSO(r); }
+        }
+      }
+
+      // calcular por produto
+      const produtosAT = [...new Set([...tgtsAT.map(t => t.PRODUTO), ...baseAT.map(r => r[COLS.PRODUTO])])].filter(p => p);
+      const acima = [], abaixo = [];
+      produtosAT.forEach(prod => {
+        const realYTD = baseAT.filter(r => r[COLS.PRODUTO]===prod && r[COLS.ANO]===anoAT && r[COLS.MES_NUM]<=mesAT).reduce((s,r)=>s+getValor(r),0);
+        const realYTDant = baseAT.filter(r => r[COLS.PRODUTO]===prod && r[COLS.ANO]===anoAT-1 && r[COLS.MES_NUM]<=mesAT).reduce((s,r)=>s+getValor(r),0);
+        const tgtYTD = tgtsAT.filter(t => t.PRODUTO===prod && +t.ANO===anoAT && +t.MES_NUM<=mesAT).reduce((s,t)=>s+(+t[campoTgt]||0),0);
+        if(!tgtYTD) return; // só produtos com target
+        const vsTgt = (realYTD/tgtYTD*100) - 100;
+        const vsPY = realYTDant ? ((realYTD/realYTDant*100) - 100) : null;
+        const soP = soYTD[prod] || 0, soA = soYTDant[prod] || 0;
+        const soVsPY = soA ? ((soP/soA*100) - 100) : (soP>0?100:null);
+        const item = {nome:prod, franquia:frProdAT[prod]||'—', vsTgt, vsPY, soVsPY};
+        (vsTgt >= 0 ? acima : abaixo).push(item);
+      });
+      acima.sort((a,b)=>b.vsTgt-a.vsTgt);
+      abaixo.sort((a,b)=>a.vsTgt-b.vsTgt);
+
+      // helper: montar tabela agrupada por franquia
+      const pPY = v => v===null ? '—' : `${v>=0?'+':''}${v.toFixed(0)}%`;
+      const corPY = v => v===null ? CINZA : (v>=0?VERDE:VERMELHO);
+      function montarLado(slide, x, w, titulo, corHeader, lista, vazio){
+        slide.addShape('rect', {x:x, y:0.86, w:w, h:0.34, fill:{color:corHeader}, line:{type:'none'}});
+        if(typeof ICON_PRODUTO !== 'undefined') slide.addImage({data:ICON_PRODUTO, x:x+0.1, y:0.9, w:0.24, h:0.24});
+        slide.addText(titulo, {x:x+0.42, y:0.86, w:w-0.5, h:0.34, fontSize:12, bold:true, color:BRANCO, valign:'middle', fontFace:'Arial'});
+        const rows = [[
+          {text:'Produto', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:9}},
+          {text:'%vs TGT', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:9, align:'right'}},
+          {text:'%vs PY', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:9, align:'right'}},
+          {text:'SO vs PY', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:9, align:'right'}}
+        ]];
+        if(lista.length === 0){
+          rows.push([{text:vazio, options:{colspan:4, italic:true, color:CINZA, align:'center', fontSize:9, fill:{color:'F8FAFC'}}}]);
+        } else {
+          // agrupar por franquia
+          const porFr = {};
+          lista.forEach(l => { (porFr[l.franquia] ||= []).push(l); });
+          Object.keys(porFr).sort().forEach(fr => {
+            rows.push([{text:fr, options:{colspan:4, bold:true, color:AZUL, fill:{color:'EEF2FF'}, fontSize:9}}]);
+            porFr[fr].slice(0, 20).forEach(it => {
+              rows.push([
+                {text:it.nome, options:{fontSize:8.5}},
+                {text:`${it.vsTgt>=0?'+':''}${it.vsTgt.toFixed(0)}%`, options:{fontSize:8.5, align:'right', bold:true, color:it.vsTgt>=0?VERDE:VERMELHO}},
+                {text:pPY(it.vsPY), options:{fontSize:8.5, align:'right', color:corPY(it.vsPY)}},
+                {text:pPY(it.soVsPY), options:{fontSize:8.5, align:'right', color:corPY(it.soVsPY)}}
+              ]);
+            });
+          });
+        }
+        slide.addTable(rows, {x:x, y:1.24, w:w, colW:[w-3.0, 1.0, 1.0, 1.0], fontSize:8.5, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
+      }
+
+      montarLado(sAT, 0.3, 6.35, 'ACIMA DO TARGET', '2E7D52', acima, 'Nenhum produto acima do target');
+      montarLado(sAT, 6.85, 6.35, 'ABAIXO DO TARGET', 'B23A48', abaixo, 'Nenhum produto abaixo do target');
     }
 
     // ============================================================
@@ -12897,7 +13014,89 @@ async function exportPPTX(){
       gerarSlidesPlanoGrupo(fr, [fr]);
     });
 
-    // Salvar
+    // ============================================================
+    // SLIDE AGENDA (criado por último, reposicionado para 2º via reorder)
+    // ============================================================
+    const sAgenda = pptx.addSlide();
+    sAgenda.background = {color:'FFFFFF'};
+    addHeader(sAgenda, 'Agenda');
+    const agendaItens = [
+      'Indicadores e Benchmark',
+      'Análise por Tipo de Cliente',
+      'Resumo Comparativo · Key Accounts',
+      'Análise Comparativa Sell-in × Sell-out',
+      'Insight Rápido',
+      'Plano de Ação · Prioridades',
+      'Evolução Mensal · Mês atual vs Ano anterior',
+      'Sell-in × Sell-out · Últimos 12 meses (valor e unidade)',
+      'Maiores Crescimentos e Quedas · Diagnóstico',
+      'Evolução Systane',
+      'Targets Financeiros e Detalhe por Franquia',
+      'Top 15 Crescimento de Produtos e Sell-out',
+      'Produtos Acima e Abaixo do Target',
+      'Movers',
+      'Crescimento por Produto 2024-26 e Sell-out',
+      'Plano de Recuperação'
+    ];
+    const colA = agendaItens.slice(0, 8), colB = agendaItens.slice(8);
+    const drawAgendaCol = (itens, x, off) => {
+      itens.forEach((it, i) => {
+        const y = 1.25 + i*0.62;
+        sAgenda.addShape(pptx.ShapeType.rect, {x:x, y:y, w:0.42, h:0.34, fill:{color:'1A5FB4'}, line:{type:'none'}});
+        sAgenda.addText(String(off+i+1), {x:x, y:y, w:0.42, h:0.34, fontSize:13, bold:true, color:BRANCO, align:'center', valign:'middle'});
+        sAgenda.addText(it, {x:x+0.58, y:y, w:5.7, h:0.34, fontSize:12, color:AZUL_ESCURO, valign:'middle', fontFace:'Open Sans'});
+      });
+    };
+    drawAgendaCol(colA, 0.5, 0);
+    drawAgendaCol(colB, 6.9, 8);
+
+    // ============================================================
+    // REORGANIZAÇÃO FINAL DA ORDEM DOS SLIDES (ordem executiva)
+    // ============================================================
+    try {
+      const _norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      const tituloSlidePPT = (sl) => {
+        try {
+          return (sl._slideObjects||[])
+            .filter(o => o.text)
+            .map(o => Array.isArray(o.text) ? o.text.map(t => t.text||'').join('') : String(o.text))
+            .join(' ');
+        } catch(e){ return ''; }
+      };
+      const ordemMatch = [
+        ['agenda', 1],
+        ['indicadores', 2],
+        ['tipo de cliente', 3],
+        ['resumo comparativo', 4],
+        ['analise comparativa sell', 5],
+        ['plano de recuperacao', 16],
+        ['insight', 6],
+        ['plano de acao', 7],
+        ['evolucao mensal', 8],
+        ['diferenca · ultimos 12', 9], ['diferenca', 9],
+        ['maiores crescimentos', 10], ['diagnostico do crescimento', 10],
+        ['maiores quedas', 10], ['diagnostico da queda', 10],
+        ['tendencia por systane', 11],
+        ['targets financeiros', 12], ['status de targets', 12],
+        ['acima vs abaixo', 13],
+        ['movers', 14],
+        ['crescimento por produto', 15], ['crescimento sell-out por produto', 15]
+      ];
+      const slides = pptx._slides;
+      const capa = slides[0]; // capa sempre primeiro
+      const resto = slides.slice(1);
+      const rankDe = (sl) => {
+        const t = _norm(tituloSlidePPT(sl));
+        for(const [kw, r] of ordemMatch){ if(t.includes(kw)) return r; }
+        return 50; // não listados → após os principais, preservando ordem
+      };
+      const comRank = resto.map((sl, i) => ({sl, r: rankDe(sl), i}));
+      comRank.sort((a,b) => a.r - b.r || a.i - b.i);
+      const novaOrdem = [capa, ...comRank.map(x => x.sl)];
+      pptx._slides.length = 0;
+      novaOrdem.forEach(sl => pptx._slides.push(sl));
+    } catch(e){ console.warn('Reorder falhou, mantendo ordem original', e); }
+
     // Salvar
     const sufixoCliente = clienteSelecionado ? `_${clienteSelecionado.substring(0,20).replace(/[^\w]/g,'_')}` : '';
     const nomeArquivo = `Alcon_SalesInsights_${metricaAtual}${sufixoCliente}_${new Date().toISOString().slice(0,10)}.pptx`;

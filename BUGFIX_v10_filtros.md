@@ -1,35 +1,62 @@
-# v10 - Ajustes pontuais + limpeza de emojis no PowerPoint
+# v10 - FINAL: slide novo + agrupamento + reorganização
 
-## ✅ Slide 2 — faixa SELL-OUT
-Agora há DUAS faixas largas (replicando o padrão):
-- SELL-IN (ícone de fábrica)
-- SELL-OUT (M-2) (ícone de farmácia)
-Antes a faixa de sell-out estava dentro de cada card; agora é faixa única
-larga, igual à de sell-in.
+## ✅ Slide NOVO: Produtos Acima vs Abaixo do Target
+Dois lados (Acima = verde · Abaixo = vermelho), agrupados por franquia.
+Colunas por produto: Nome · %vs TGT · %vs PY · SO vs PY. Ícone de produto.
+Considera só produtos com target; usa a métrica selecionada.
 
-## ✅ Limpeza geral de emojis (PowerPoint)
-Removidos os emojis decorativos de TODOS os slides do PPT
-(🏭🏪📦📊📈📉🎯💡🔄🥧🛒🏷️ℹ️⚠️🥇🥈🥉👑✅🚨📅). Os ícones de status viraram
-setas/bolinhas (▲ ● ▼). Medalhas viraram a posição (1º, 2º, 3º).
+## ✅ Agrupamento Systane Complete (slide 28)
+JÁ estava aplicado via canonProduto (COMPLETE + COMPLETE MDPF → COMPLETE),
+tanto no Crescimento por Produto (sell-in) quanto na versão Sell-out.
+Nada a fazer além de confirmar.
 
-## ✅ Slides 17/19 (crescimento e queda) — Redes → Clientes
-- "SELL-OUT · Redes" → "SELL-OUT · Clientes" (em crescimento e queda)
-- Ícone de cliente/produto (versão azul) adicionado nos títulos dos quadrantes
-  (sell-in e sell-out)
+## ✅ Análise por Tipo de Cliente
+O slide já existia; agora vai para o TOPO na reorganização.
 
-## ✅ Slide 5 (Top 15 Clientes)
-- Emoji restante (⚠️ do rodapé) removido
-- Já tinha ícone de cliente nas faixas e coluna "Cliente"
+## ✅ Decomposição REMOVIDA do PowerPoint (a pedido)
 
-## Recap geral
-- Bloco A: faixas/ícones (slides 2, 5, 6/7) ✅
-- Bloco B: slides em branco corrigidos ✅
-- Bloco C (parte): Targets 14-17 ✅; ajustes pontuais 2/5/17/19 ✅
-- Limpeza de emojis no PPT ✅
+## ✅ Slide AGENDA (novo, 2º slide)
+16 tópicos em 2 colunas numeradas, na ordem executiva.
 
-## ⏭️ Ainda pendente
-- Bloco B: sell-out na tendência Systane (slide 21)
-- Bloco C: slides 21-24 design+banner; slide 25/26 detalhe franquia
-- Bloco D: slides novos (tipo cliente, produtos acima/abaixo target),
-  agrupar Systane Complete (slide 28)
-- Bloco E: reorganização final
+## ✅ REORGANIZAÇÃO FINAL da ordem dos slides
+Os slides agora saem nesta ordem (reordenados ao gerar o PPT):
+1. Capa
+2. Agenda
+3. Indicadores e Benchmark
+4. Análise por Tipo de Cliente
+5. Resumo Comparativo (Key Accounts)
+6. Análise Comparativa Sell-in × Sell-out
+7. Insight Rápido
+8. Plano de Ação · Prioridades
+9. Evolução Mensal (mês atual vs ano anterior)
+10. Sell-in × Sell-out · 12 meses (valor e unidade)
+11. Maiores Crescimentos e Quedas (diagnóstico)
+12. Evolução Systane
+13. Targets Financeiros e Detalhe por Franquia
+14. Top 15 Crescimento de Produtos e Sell-out
+15. Produtos Acima e Abaixo do Target
+16. Movers
+17. Crescimento por Produto 2024-26 e Sell-out
+18. Plano de Recuperação
+(Slides não listados — Mix por Franquia, Top 15 Clientes/Produtos por canal —
+ ficam ao final, preservados. Decomposição removida.)
+
+Como funciona: ao final do export, o array interno de slides é reordenado
+lendo o título de cada slide e aplicando a ordem acima. Nenhum slide é perdido.
+
+## Recap COMPLETO de tudo que foi feito
+- Bloco A: faixas/ícones de 1 cor (slides 2, 5, 6/7) + farol
+- Bloco B: slides em branco corrigidos + sell-out na tendência Systane
+- Bloco C: Targets 14-17 (Actual+métrica, %PY); design+banner 21-24;
+  ajustes 2 (faixa sell-out), 5, 17/19 (Redes→Clientes + ícones)
+- Bloco D: slide novo (acima/abaixo target); Systane Complete agrupado;
+  tipo de cliente ao topo
+- Bloco E: Agenda + reorganização final + decomposição removida
+- Emojis 100% removidos do PowerPoint
+- Rodapé "Business Use Only" à direita; sem data no topo
+- Upload de arquivos removido do HTML
+
+## ✅ Validações
+- Sintaxe JS OK (4 scripts)
+- QA visual: slide 2 (2 faixas), slide 5/6 (ícones+farol), Targets (%PY),
+  Systane (sell-out), slide novo (acima/abaixo), Agenda, reorder (32→32) ✅
