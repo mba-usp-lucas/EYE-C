@@ -9211,6 +9211,29 @@ async function exportPPTX(){
       });
     };
 
+    // Helper: captura segura de canvas → data URI. Retorna null se o canvas
+    // não renderizou (evita PNG de 0 bytes que CORROMPE o PowerPoint).
+    const _canvasImg = (cv) => {
+      try {
+        if(!cv || typeof cv.toDataURL !== 'function') return null;
+        if((cv.width||0) < 2 || (cv.height||0) < 2) return null;
+        const uri = cv.toDataURL('image/png', 1.0);
+        const b64 = (String(uri).split(',')[1] || '');
+        if(b64.length < 200) return null; // imagem vazia/inválida
+        return uri;
+      } catch(e){ return null; }
+    };
+    // Insere imagem de canvas só se válida; senão coloca aviso discreto
+    const addCanvasImg = (slide, cv, opts) => {
+      const uri = _canvasImg(cv);
+      if(uri){ slide.addImage(Object.assign({data:uri}, opts)); return true; }
+      slide.addText('Gráfico indisponível (reabra a seção e exporte novamente)', {
+        x:opts.x, y:opts.y + (opts.h||3)/2 - 0.2, w:opts.w, h:0.4,
+        fontSize:11, italic:true, color:'94A3B8', align:'center'
+      });
+      return false;
+    };
+
     // ============================================================
     // SLIDE 1 - CAPA
     // ============================================================
@@ -10666,7 +10689,7 @@ async function exportPPTX(){
     addHeader(sEvo, `Evolução Mensal · ${mLabel}`);
     const chartYoY = document.getElementById('chartYoY');
     if(chartYoY){
-      sEvo.addImage({data:chartYoY.toDataURL('image/png', 1.0), x:0.5, y:1.0, w:12.3, h:5.8});
+      addCanvasImg(sEvo, chartYoY, {x:0.5, y:1.0, w:12.3, h:5.8});
     }
     sEvo.addText('Linha azul = ano atual · Linha tracejada = ano anterior · Pontos cheios = meses selecionados', {
       x:0.5, y:6.9, w:12.3, h:0.3, fontSize:10, italic:true, color:CINZA, align:'center'
@@ -10680,7 +10703,7 @@ async function exportPPTX(){
       addHeader(sEvoSO, `Evolução Mensal · Sell-out · ${mLabel}`);
       const chartSO = document.getElementById('chartSellout');
       if(chartSO){
-        sEvoSO.addImage({data:chartSO.toDataURL('image/png', 1.0), x:0.5, y:1.0, w:12.3, h:5.8});
+        addCanvasImg(sEvoSO, chartSO, {x:0.5, y:1.0, w:12.3, h:5.8});
       }
       sEvoSO.addText(`Sell-out tem 2 meses de defasagem (M-2). Última atualização: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano}. Filtros de Franquia, Tipo de Cliente e Produto são aplicados.`, {
         x:0.5, y:6.9, w:12.3, h:0.3, fontSize:10, italic:true, color:CINZA, align:'center'
@@ -10864,13 +10887,13 @@ async function exportPPTX(){
     sMix.addText(per.labelAtual, {x:0.3, y:0.9, w:6.3, h:0.4, fontSize:14, bold:true, color:AZUL, align:'center'});
     const chartFr = document.getElementById('chartFranquia');
     if(chartFr){
-      sMix.addImage({data:chartFr.toDataURL('image/png', 1.0), x:0.3, y:1.35, w:6.3, h:5.5});
+      addCanvasImg(sMix, chartFr, {x:0.3, y:1.35, w:6.3, h:5.5});
     }
 
     sMix.addText(per.labelComp, {x:6.8, y:0.9, w:6.3, h:0.4, fontSize:14, bold:true, color:'007483', align:'center'});
     const chartFrAnt = document.getElementById('chartFranquiaAnt');
     if(chartFrAnt){
-      sMix.addImage({data:chartFrAnt.toDataURL('image/png', 1.0), x:6.8, y:1.35, w:6.3, h:5.5});
+      addCanvasImg(sMix, chartFrAnt, {x:6.8, y:1.35, w:6.3, h:5.5});
     }
 
     // ============================================================
@@ -10880,7 +10903,7 @@ async function exportPPTX(){
     addHeader(sFrComp, 'Franquia · Atual vs Comparado + Crescimento %');
     const chartFrComp = document.getElementById('chartFranquiaComp');
     if(chartFrComp){
-      sFrComp.addImage({data:chartFrComp.toDataURL('image/png', 1.0), x:0.5, y:1.0, w:12.3, h:5.8});
+      addCanvasImg(sFrComp, chartFrComp, {x:0.5, y:1.0, w:12.3, h:5.8});
     }
     sFrComp.addText('Barras = volume absoluto · Linha laranja = % crescimento vs período comparado', {
       x:0.5, y:6.9, w:12.3, h:0.3, fontSize:10, italic:true, color:CINZA, align:'center'
@@ -11606,9 +11629,10 @@ async function exportPPTX(){
         return up.includes('SYSTANE') && !up.includes('LID WIPES') && !up.includes('LID-WIPES') && !up.includes('LIDWIPES');
       });
       if(prodsSystane.length > 0){
+        const gerarSlideSystane = (valorFn, valorSOFn, fmtFn, labelMetrica) => {
         const sSyst = pptx.addSlide();
         sSyst.background = {color: 'FFFFFF'};
-        addHeader(sSyst, 'Tendência por Systane · Últimos 12 meses');
+        addHeader(sSyst, 'Tendência por Systane · ' + labelMetrica + ' · Últimos 12 meses');
 
         // Identificar últimos 12 meses
         const periodosDisp = new Set();
@@ -11622,7 +11646,7 @@ async function exportPPTX(){
         const labelPer = ultimos12.length > 0
           ? `${MESES_NOME[+ultimos12[0].split('-')[1]-1]}/${ultimos12[0].split('-')[0]} a ${MESES_NOME[+ultimos12[ultimos12.length-1].split('-')[1]-1]}/${ultimos12[ultimos12.length-1].split('-')[0]}`
           : '';
-        sSyst.addText(`${labelPer} · ${METRICAS[metricaAtual].label} · Filtros: cliente + franquia`, {
+        sSyst.addText(`${labelPer} · ${labelMetrica} · Filtros: cliente + franquia`, {
           x:0.3, y:0.8, w:12.7, h:0.3, fontSize:11, italic:true, color:CINZA, fontFace:'Open Sans'
         });
 
@@ -11647,7 +11671,7 @@ async function exportPPTX(){
           if(clienteSetSy && !clienteSetSy.has(r[COLS.CLIENTE])) continue;
           const k = `${r[COLS.ANO]}-${String(r[COLS.MES_NUM]).padStart(2,'0')}`;
           if(!(k in idxMapSy)) continue;
-          aggProdSy[prod][idxMapSy[k]] += getValor(r);
+          aggProdSy[prod][idxMapSy[k]] += valorFn(r);
         }
 
         const prodsComDado = prodsSystane.filter(p => aggProdSy[p].some(v => v > 0));
@@ -11670,7 +11694,7 @@ async function exportPPTX(){
             // casar com o produto Systane equivalente (canon)
             const alvo = prodsSystane.find(p => canonProduto(p) === canonProduto(prodSO)) ||
                          prodsSystane.find(p => String(p).toUpperCase() === upSO);
-            if(alvo){ aggProdSyySO[alvo][idxMapSy[k]] += getValorSO(r); temSOSystane = true; }
+            if(alvo){ aggProdSyySO[alvo][idxMapSy[k]] += valorSOFn(r); temSOSystane = true; }
           }
         }
         } catch(eSySO){ console.warn('Systane sell-out falhou', eSySO); temSOSystane = false; }
@@ -11717,7 +11741,7 @@ async function exportPPTX(){
 
             // Header - nome do produto pode ser longo, fonte menor
             sSyst.addText(prod, {x:xM+0.08, y:yM+0.06, w:wMini-0.16, h:0.28, fontSize: ehFam?11:10, bold:true, color:'1E3A5F', fontFace:'Open Sans'});
-            sSyst.addText(`Total 12m: ${fmt(total12)}`, {x:xM+0.08, y:yM+0.32, w:wMini-0.16, h:0.18, fontSize:8.5, color:CINZA, fontFace:'Open Sans'});
+            sSyst.addText(`Total 12m: ${fmtFn(total12)}`, {x:xM+0.08, y:yM+0.32, w:wMini-0.16, h:0.18, fontSize:8.5, color:CINZA, fontFace:'Open Sans'});
 
             // Gráfico de linha (usando chart nativo do PPTX)
             const labelsM = ultimos12.map(k => {
@@ -11751,6 +11775,15 @@ async function exportPPTX(){
               ], {x:xM+0.08, y:yM+hMini-0.28, w:wMini-0.16, h:0.2, fontSize:7, fontFace:'Open Sans'});
             }
           });
+        }
+        };
+        // (1) métrica selecionada
+        gerarSlideSystane(getValor, getValorSO, fmt, METRICAS[metricaAtual].label);
+        // (2) versão em UNIDADES (sempre, exceto se a métrica já for unidades)
+        if(metricaAtual !== 'UNID'){
+          const vUnid = (r) => (+r[COLS.VALOR_UNID] || 0);
+          const vUnidSO = (r) => (+r.VALOR_UNID || +r.UNID || +r.UNIDADES || 0);
+          gerarSlideSystane(vUnid, vUnidSO, fmtNum, 'Unidades');
         }
       }
     }
