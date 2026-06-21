@@ -9613,7 +9613,7 @@ async function exportPPTX(){
     // SLIDE 3 - RESUMO COMPARATIVO POR REDE (Sell-in vs Sell-out)
     // ============================================================
     const sR = pptx.addSlide();
-    addHeader(sR, 'Resumo Comparativo por Rede');
+    addHeader(sR, 'Resumo Comparativo · Key Accounts');
 
     // Recalcula o resumo (mesma lógica da função renderResumo)
     const fontesSetR = fontesSelecionadas.length ? new Set(fontesSelecionadas) : null;
@@ -10070,8 +10070,8 @@ async function exportPPTX(){
         // Conteúdo: 3 níveis (Produto, Rede, Franquia) - top 2 cada
         const niveis = [
           {label:'Produto', dict:cruzProd, badge:''},
-          {label:'Rede', dict:cruzRede, badge:''},
-          {label:'Franquia', dict:cruzFr, badge:'🔬'}
+          {label:'Cliente', dict:cruzRede, badge:''},
+          {label:'Franquia', dict:cruzFr, badge:''}
         ];
         let yOffset = b.y + 0.6;
         niveis.forEach(n => {
@@ -10363,6 +10363,20 @@ async function exportPPTX(){
       });
 
       // Renderizar bullets no slide
+      // Limpar bullets vazios/poluídos: remove os sem conteúdo após o rótulo
+      // (ex.: "Driver: ", "Top produtos: ", ": n/d") e emojis decorativos
+      for(let i = allBullets.length - 1; i >= 0; i--){
+        const b = allBullets[i];
+        if(b.spacer || b.header) continue;
+        let t = (b.txt || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g, '').trim();
+        // remove se vazio, ou se termina logo após "rótulo:" sem valor, ou valor n/d
+        const semValor = /:\s*$/.test(t) || /:\s*(n\/d|—|-)\s*$/i.test(t) || t.length < 3;
+        if(semValor){ allBullets.splice(i, 1); }
+        else { b.txt = t; }
+      }
+      // remover spacers duplicados/órfãos no fim
+      while(allBullets.length && allBullets[allBullets.length-1].spacer) allBullets.pop();
+
       // Fonte adaptativa: se muitos bullets, reduzir para caber
       const nLinhas = allBullets.filter(b => !b.spacer).length;
       const fonteHeader = nLinhas > 14 ? 12 : 13;
@@ -11642,6 +11656,7 @@ async function exportPPTX(){
         const aggProdSyySO = {};
         for(const p of prodsSystane) aggProdSyySO[p] = new Array(12).fill(0);
         let temSOSystane = false;
+        try {
         if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
           for(const r of rawDataSellout){
             const prodSO = r.PRODUTO; if(!prodSO) continue;
@@ -11658,6 +11673,7 @@ async function exportPPTX(){
             if(alvo){ aggProdSyySO[alvo][idxMapSy[k]] += getValorSO(r); temSOSystane = true; }
           }
         }
+        } catch(eSySO){ console.warn('Systane sell-out falhou', eSySO); temSOSystane = false; }
 
         // FAMÍLIA SYSTANE: soma de todos (exceto Lid Wipes, já fora) - primeiro card
         const FAM_KEY_PPT = 'FAMÍLIA SYSTANE';
@@ -12196,7 +12212,7 @@ async function exportPPTX(){
       const sAT = pptx.addSlide();
       sAT.background = {color: 'FFFFFF'};
       addHeader(sAT, `Produtos · Acima vs Abaixo do Target · ${mLabel}`);
-
+     try {
       const baseAT = filtrarBase();
       const campoTgt = ({UNID:'TARGET_UNID', BRL:'TARGET_BRL', USD:'TARGET_USD'})[metricaAtual];
       const tgtsAT = targetsFinanceiros.filter(t => !franquiasSelecionadas.length || franquiasSelecionadas.includes(t.FRANQUIA));
@@ -12276,6 +12292,7 @@ async function exportPPTX(){
 
       montarLado(sAT, 0.3, 6.35, 'ACIMA DO TARGET', '2E7D52', acima, 'Nenhum produto acima do target');
       montarLado(sAT, 6.85, 6.35, 'ABAIXO DO TARGET', 'B23A48', abaixo, 'Nenhum produto abaixo do target');
+     } catch(eAT){ console.warn('Slide Acima/Abaixo Target falhou', eAT); sAT.addText('Dados insuficientes para este slide.', {x:0.5, y:3.5, w:12, h:0.5, fontSize:12, italic:true, color:'64748B', align:'center'}); }
     }
 
     // ============================================================
@@ -13076,6 +13093,8 @@ async function exportPPTX(){
         ['diferenca · ultimos 12', 9], ['diferenca', 9],
         ['maiores crescimentos', 10], ['diagnostico do crescimento', 10],
         ['maiores quedas', 10], ['diagnostico da queda', 10],
+        ['top 15 clientes', 10.3],
+        ['top 15 produtos', 10.5],
         ['tendencia por systane', 11],
         ['targets financeiros', 12], ['status de targets', 12],
         ['acima vs abaixo', 13],
