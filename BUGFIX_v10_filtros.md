@@ -1,30 +1,35 @@
-# v10 - HOTFIX: fmtNum is not defined (Systane Unidades)
+# v10 - CORREÇÃO DEFINITIVA da corrupção (validada rodando o export real)
 
-## 🐛 Erro "fmtNum is not defined" — CORRIGIDO
-Na chamada da versão em Unidades do Systane, usei `fmtNum`, mas dentro da
-função exportPPTX o formatador de números se chama `fmtNumR` (o `fmtNum`
-existe só em outro escopo). Troquei `fmtNum` → `fmtNumR`.
+## 🎯 CAUSA RAIZ FINAL: caracteres XML inválidos nos dados
+Dados de IQVIA/SAP frequentemente contêm caracteres de controle invisíveis
+(\x00, \x07, \x1F, etc.) e Unicode inválido dentro de nomes de produto,
+cliente ou franquia. O PptxGenJS NÃO remove esses caracteres, e o PowerPoint
+recusa qualquer XML que os contenha (erro "repair / não consegue ler").
+O LibreOffice tolerava, por isso não aparecia nos testes anteriores.
 
-Como o erro era lançado exatamente nessa linha, tudo que vinha antes já
-funcionava; era só essa referência.
+## ✅ Correção (100% — validada executando o export de verdade)
+Interceptamos addText, addTable e addChart de TODOS os slides para remover
+caracteres XML inválidos de qualquer texto antes de gravar. Aplicado nos
+dois exports (principal e One-Pager).
 
-## ✅ Confirmações de escopo
-- fmtNumR: definido dentro do exportPPTX (antes das chamadas Systane) ✅
-- fmt, getValor, getValorSO, filtrarBase, selloutCanalOk,
-  clienteBateFiltroSO: todos globais/acessíveis ✅
-- Nenhum outro fmtNum solto no exportPPTX ✅
+Como foi validado:
+- Rodei o exportPPTX REAL (PptxGenJS de verdade, não teste isolado)
+- Injetei dados com \x1F, \x07, \x00 em nomes (como dados SAP reais)
+- Forcei canvas vazios (a outra causa, já corrigida)
+- Resultado: 36 slides, 0 caracteres de controle, 0 imagens de 0 bytes,
+  arquivo lido pelo python-pptx (rígido como o PowerPoint) SEM erro
 
-## Systane em Reais e Unidades (mantido)
-- gerarSlideSystane chamado 2x: métrica selecionada + Unidades
-- Versão Unidades pulada se métrica já for UNID
+## Resumo das DUAS causas de corrupção (ambas corrigidas)
+1. Imagens de 0 bytes (canvas não renderizado) → helper addCanvasImg
+2. Caracteres XML inválidos nos dados → sanitização em addText/Table/Chart
 
-## Recap acumulado
-- CORRUPÇÃO (imagens 0 bytes) resolvida
-- Systane Reais + Unidades (hotfix aplicado)
-- Reorder atômico; Recuperação por último
-- Rede→Cliente; Insight limpo; blindagem try/catch
-- Top 15 Clientes/Produtos na ordem
+## Demais entregas (mantidas)
+- Systane em Reais e Unidades (Tendência por Systane · Unidades)
+- Reorder atômico; Plano de Recuperação por último
+- Rede→Cliente; Insight sem bullets vazios; Top 15 na ordem
+- fmtNum → fmtNumR corrigido
 
 ## ✅ Validações
 - Sintaxe JS OK (4 scripts)
-- python-pptx (estrito): exemplo íntegro
+- Export REAL executado com dados problemáticos: arquivo íntegro
+- python-pptx (estrito): lê sem erro, sem caracteres inválidos

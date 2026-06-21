@@ -8534,6 +8534,26 @@ async function exportOnePager(){
     pptx.author = 'Alcon';
     pptx.title = 'Alcon Sales · One-Pager Executivo';
 
+    // Sanitização XML (mesma do export principal) — evita corrupção "repair"
+    {
+      const _XML_BAD = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFE\uFFFF]/g;
+      const _xs = (s) => (typeof s === 'string' ? s.replace(_XML_BAD, '') : s);
+      const _xsDeep = (v) => {
+        if(typeof v === 'string') return _xs(v);
+        if(Array.isArray(v)) return v.map(_xsDeep);
+        if(v && typeof v === 'object'){ const o={}; for(const k in v) o[k]=_xsDeep(v[k]); return o; }
+        return v;
+      };
+      const _origAddSlide = pptx.addSlide.bind(pptx);
+      pptx.addSlide = function(...args){
+        const sl = _origAddSlide(...args);
+        const _at = sl.addText.bind(sl); sl.addText = (t,o) => _at(_xsDeep(t), o);
+        const _atb = sl.addTable.bind(sl); sl.addTable = (r,o) => _atb(_xsDeep(r), o);
+        const _ac = sl.addChart.bind(sl); sl.addChart = (ty,d,o) => _ac(ty, _xsDeep(d), o);
+        return sl;
+      };
+    }
+
     // Cores Alcon
     const AZUL = '003595';
     const AZUL_ESCURO = '002670';
@@ -9141,6 +9161,33 @@ async function exportPPTX(){
     pptx.title = 'Alcon Sales Insights';
     pptx.company = 'Alcon';
     pptx.subject = 'Sales Insights - Sell-in & Sell-out';
+
+    // ===== SANITIZAÇÃO XML (corrige corrupção "repair" do PowerPoint) =====
+    // Dados de IQVIA/SAP podem conter caracteres de controle inválidos em XML
+    // (ex.: \x00, \x07, \x1F) que o PowerPoint recusa. Removemos antes de gravar.
+    const _XML_BAD = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFE\uFFFF]/g;
+    const _xs = (s) => (typeof s === 'string' ? s.replace(_XML_BAD, '') : s);
+    const _xsDeep = (v) => {
+      if(typeof v === 'string') return _xs(v);
+      if(Array.isArray(v)) return v.map(_xsDeep);
+      if(v && typeof v === 'object'){
+        const o = {};
+        for(const k in v) o[k] = _xsDeep(v[k]);
+        return o;
+      }
+      return v;
+    };
+    const _origAddSlide = pptx.addSlide.bind(pptx);
+    pptx.addSlide = function(...args){
+      const sl = _origAddSlide(...args);
+      const _at = sl.addText.bind(sl);
+      sl.addText = (txt, opts) => _at(_xsDeep(txt), opts);
+      const _atb = sl.addTable.bind(sl);
+      sl.addTable = (rows, opts) => _atb(_xsDeep(rows), opts);
+      const _ac = sl.addChart.bind(sl);
+      sl.addChart = (type, data, opts) => _ac(type, _xsDeep(data), opts);
+      return sl;
+    };
 
     // Cores Alcon
     const AZUL = '0079C1';
