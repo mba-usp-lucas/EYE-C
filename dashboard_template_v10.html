@@ -11783,7 +11783,7 @@ async function exportPPTX(){
         if(metricaAtual !== 'UNID'){
           const vUnid = (r) => (+r[COLS.VALOR_UNID] || 0);
           const vUnidSO = (r) => (+r.VALOR_UNID || +r.UNID || +r.UNIDADES || 0);
-          gerarSlideSystane(vUnid, vUnidSO, fmtNum, 'Unidades');
+          gerarSlideSystane(vUnid, vUnidSO, fmtNumR, 'Unidades');
         }
       }
     }
