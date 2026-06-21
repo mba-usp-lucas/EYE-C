@@ -1,38 +1,44 @@
-# v10 - Correções: Rede→Cliente, Insight, blindagem, ordem
+# v10 - CORREÇÃO CRÍTICA: arquivo corrompido (PowerPoint "repair")
 
-## ✅ Slide 9 "REDE" → "CLIENTE"
-Na Análise Comparativa (níveis Produto/Cliente/Franquia), "Rede" virou
-"Cliente". Emoji 🔬 removido. Título "Resumo Comparativo" agora é
-"Resumo Comparativo · Key Accounts".
+## 🐛 Erro "repair / não consegue ler" — CORRIGIDO
+Causa: no slide de Tendência por Systane, os arrays de dados tinham SEMPRE
+12 posições (Array(12)), mas os rótulos de mês (labels) podiam ter MENOS de
+12 quando havia menos de 12 meses de dados. Essa diferença de tamanho entre
+values e labels gera um gráfico inválido que o PowerPoint recusa (pede reparo),
+mesmo o LibreOffice abrindo.
 
-## ✅ Insight Rápido — bullets vazios removidos
-Agora filtra automaticamente bullets sem conteúdo (ex.: "Driver: " sem valor,
-": n/d", linhas vazias) e remove emojis decorativos. Fica mais visual e
-menos poluído.
+Correção:
+- Os valores dos gráficos Systane (sell-in e sell-out) agora são alinhados
+  ao número de rótulos (values.slice(0, labels.length)).
+- Valores não-numéricos (NaN/Infinity) são trocados por 0 (sanitização).
 
-## ✅ Slides 6/7/8 que "não apareciam" — CAUSA E CORREÇÃO
-Causa provável: um bloco novo (slide Acima/Abaixo do Target ou sell-out do
-Systane) dava ERRO no seu ambiente real, abortando o export inteiro — então
-você via um arquivo antigo, sem os slides novos.
-Correção: blindei essas adições com try/catch. Agora, se algo falhar num
-slide específico, ele degrada sozinho e o restante do PPT é gerado normalmente.
+## 🛡️ Reordenação agora é ATÔMICA e segura
+A reorganização da ordem só é aplicada se preservar exatamente os mesmos
+slides (mesma quantidade, sem duplicatas, todos presentes). Se algo não bater,
+mantém a ordem original — nunca corrompe nem perde slides.
 
-## ✅ Ordem dos slides — Top 15 incluídos
-A reordenação agora posiciona explicitamente:
-- Top 15 Clientes
-- Top 15 Produtos · Canal Rede e Canal Distribuidor
-- Sell-in × Sell-out · Diferença · Unidades (12m)
-Todos entram na sequência (não vão mais para o final). Testado: nenhum
-slide é perdido.
+## ✅ Plano de Recuperação por ÚLTIMO
+Movido para o fim de tudo (depois inclusive dos slides não listados como Mix
+por Franquia).
 
-## ⏳ PENDENTE (próxima rodada)
+## ✅ Slides Sell-in × Sell-out em sequência
+Os pares relacionados (Evolução Mensal SI/SO, Diferença 12m valor/unidades)
+ficam adjacentes na ordem.
+
+## Recap das correções desta rodada + anteriores
+- CRÍTICO: corrupção do PPT (Systane) corrigida
+- Reorder atômico (à prova de perda de slides)
+- Plano de Recuperação por último
+- Slide 9 "Rede" → "Cliente"; Resumo → "Key Accounts"
+- Insight Rápido: bullets vazios removidos
+- Blindagem (try/catch) nos slides novos
+- Top 15 Clientes e Produtos (Rede/Distribuidor) na ordem
+
+## ⏳ PENDENTE
 - Systane últimos 12 meses em UNIDADES (versão separada, além de Reais)
-- Slide 2 "fora de contexto" → preciso que você confirme, no novo export,
-  QUAL slide está na posição 2 (título), pois com a reordenação a pos. 2
-  agora é a Agenda. Se ainda houver um slide deslocado, me diz o título.
-- Slide 7 (Evolução Mensal) sell-in: depende do gráfico chartYoY renderizar;
-  a correção de expandir seções antes do export deve resolver — confirmar.
+- Confirmar qual slide estava na posição 2 fora de contexto
 
 ## ✅ Validações
 - Sintaxe JS OK (4 scripts)
-- Reorder testado: 30→30 slides, Top 15 nas posições certas
+- Gráfico com labels<12: agora gera arquivo íntegro (testado)
+- Reorder atômico testado (sem perda)

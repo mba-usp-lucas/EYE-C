@@ -11724,8 +11724,10 @@ async function exportPPTX(){
               const m = +k.split('-')[1];
               return MESES_NOME[m-1];
             });
-            const seriesChart = [{ name: 'Sell-in', labels: labelsM, values: dadosP }];
-            const dadosSO = aggProdSyySO[prod] || [];
+            const _san = arr => (arr||[]).map(v => Number.isFinite(+v) ? +v : 0);
+            const _nL = labelsM.length; // alinhar valores ao nº de rótulos (evita corrupção no PPT)
+            const seriesChart = [{ name: 'Sell-in', labels: labelsM, values: _san(dadosP).slice(0, _nL) }];
+            const dadosSO = _san(aggProdSyySO[prod] || []).slice(0, _nL);
             const temSOprod = dadosSO.some(v => v > 0);
             if(temSOprod) seriesChart.push({ name: 'Sell-out', labels: labelsM, values: dadosSO });
             sSyst.addChart(pptx.ChartType.line, seriesChart, {
@@ -13086,7 +13088,7 @@ async function exportPPTX(){
         ['tipo de cliente', 3],
         ['resumo comparativo', 4],
         ['analise comparativa sell', 5],
-        ['plano de recuperacao', 16],
+        ['plano de recuperacao', 99],
         ['insight', 6],
         ['plano de acao', 7],
         ['evolucao mensal', 8],
@@ -13112,8 +13114,16 @@ async function exportPPTX(){
       const comRank = resto.map((sl, i) => ({sl, r: rankDe(sl), i}));
       comRank.sort((a,b) => a.r - b.r || a.i - b.i);
       const novaOrdem = [capa, ...comRank.map(x => x.sl)];
-      pptx._slides.length = 0;
-      novaOrdem.forEach(sl => pptx._slides.push(sl));
+      // Segurança: só aplica se preservar exatamente os mesmos slides (sem perda/duplicata)
+      const mesmaQtd = novaOrdem.length === slides.length;
+      const semDuplicata = new Set(novaOrdem).size === novaOrdem.length;
+      const todosPresentes = slides.every(s => novaOrdem.includes(s));
+      if(mesmaQtd && semDuplicata && todosPresentes){
+        pptx._slides.length = 0;
+        novaOrdem.forEach(sl => pptx._slides.push(sl));
+      } else {
+        console.warn('Reorder abortado por segurança (contagem/duplicata)', {mesmaQtd, semDuplicata, todosPresentes});
+      }
     } catch(e){ console.warn('Reorder falhou, mantendo ordem original', e); }
 
     // Salvar
