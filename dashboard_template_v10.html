@@ -8545,11 +8545,13 @@ async function exportOnePager(){
         return v;
       };
       const _origAddSlide = pptx.addSlide.bind(pptx);
+      const _imgValida = (opts) => { try { if(!opts) return false; const d=opts.data; if(typeof d==='string'&&d.indexOf('data:')===0){ return (d.split(',')[1]||'').length>=200; } return !!(opts.path||d); } catch(e){ return false; } };
       pptx.addSlide = function(...args){
         const sl = _origAddSlide(...args);
         const _at = sl.addText.bind(sl); sl.addText = (t,o) => _at(_xsDeep(t), o);
         const _atb = sl.addTable.bind(sl); sl.addTable = (r,o) => _atb(_xsDeep(r), o);
         const _ac = sl.addChart.bind(sl); sl.addChart = (ty,d,o) => _ac(ty, _xsDeep(d), o);
+        const _ai = sl.addImage.bind(sl); sl.addImage = (o) => { if(_imgValida(o)) return _ai(o); return sl; };
         return sl;
       };
     }
@@ -9152,13 +9154,22 @@ async function exportPPTX(){
   // Solução: expandir todas as seções colapsáveis, re-renderizar e aguardar.
   try {
     document.querySelectorAll('.collapsible.collapsed').forEach(el => el.classList.remove('collapsed'));
+    // Forçar reflow do layout para que os containers passem a ter dimensão real
+    // (Chart.js não desenha em container display:none/0x0).
+    document.body.offsetHeight; // leitura força reflow
     if(typeof renderizarTudo === 'function') renderizarTudo();
-    // resize/redraw dos charts já criados
-    if(typeof charts === 'object' && charts){
-      Object.values(charts).forEach(c => { try { if(c && c.resize) c.resize(); if(c && c.update) c.update('none'); } catch(e){} });
-    }
-    // aguardar o navegador pintar os canvases
-    await new Promise(r => setTimeout(r, 450));
+    // resize/redraw dos charts já criados (2 passadas, com reflow entre elas)
+    const _redrawCharts = () => {
+      if(typeof charts === 'object' && charts){
+        Object.values(charts).forEach(c => { try { if(c && c.resize) c.resize(); if(c && c.update) c.update('none'); } catch(e){} });
+      }
+    };
+    _redrawCharts();
+    await new Promise(r => setTimeout(r, 350));
+    document.body.offsetHeight;
+    _redrawCharts();
+    // aguardar o navegador pintar os canvases (margem extra p/ PC lento)
+    await new Promise(r => setTimeout(r, 500));
   } catch(e){ /* segue mesmo se algo falhar */ }
 
   try {
@@ -9189,6 +9200,19 @@ async function exportPPTX(){
       return v;
     };
     const _origAddSlide = pptx.addSlide.bind(pptx);
+    // Valida se uma imagem (data URI ou path) tem conteúdo real
+    const _imgValida = (opts) => {
+      try {
+        if(!opts) return false;
+        const d = opts.data;
+        if(typeof d === 'string' && d.indexOf('data:') === 0){
+          const b64 = (d.split(',')[1] || '');
+          return b64.length >= 200; // base64 real (não vazio/truncado)
+        }
+        // path/url: deixa passar (PptxGenJS resolve)
+        return !!(opts.path || d);
+      } catch(e){ return false; }
+    };
     pptx.addSlide = function(...args){
       const sl = _origAddSlide(...args);
       const _at = sl.addText.bind(sl);
@@ -9197,6 +9221,9 @@ async function exportPPTX(){
       sl.addTable = (rows, opts) => _atb(_xsDeep(rows), opts);
       const _ac = sl.addChart.bind(sl);
       sl.addChart = (type, data, opts) => _ac(type, _xsDeep(data), opts);
+      // addImage: ignora imagens vazias/inválidas (evita PNG de 0 bytes → repair)
+      const _ai = sl.addImage.bind(sl);
+      sl.addImage = (opts) => { if(_imgValida(opts)) return _ai(opts); return sl; };
       return sl;
     };
 

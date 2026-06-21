@@ -1,40 +1,35 @@
-# v10 - CORREÇÃO DEFINITIVA: caminho dos gráficos (causa raiz do "repair")
+# v10 - Corrupção eliminada (3 causas) + slide vazio tratado
 
-## 🎯 CAUSA RAIZ REAL (confirmada no código do PptxGenJS)
-O PptxGenJS gera o caminho (Target) dos GRÁFICOS como ABSOLUTO:
-    Target="/ppt/charts/chart1.xml"
-enquanto imagens usam caminho RELATIVO (../media/...). O PowerPoint RECUSA
-caminhos absolutos em relationships e pede reparo ("repair / não consegue ler").
-O python-pptx e o LibreOffice toleram — por isso só o PowerPoint acusava.
+## "Slide 6/7 vem vazio" — esclarecimento
+Testei: um slide com painel vazio (sem texto) ou com gráfico não renderizado
+NÃO corrompe o arquivo — gera um parágrafo vazio válido. Ou seja, o slide
+vazio é um efeito VISUAL, não a causa do "repair".
 
-Como todo slide com gráfico nativo (Systane, Diferença SI×SO, Movers) tinha
-esse caminho absoluto, qualquer um desses bastava para corromper o arquivo.
+Os slides 6/7 (na ordem de criação) são "Insight Rápido" ou "Evolução Mensal".
+A Evolução Mensal captura um gráfico da tela; se o gráfico não tiver desenhado
+ainda (seção fechada / PC lento), o slide vinha vazio. Agora:
+- A renderização antes do export ficou mais robusta (força reflow, redesenha
+  os gráficos em 2 passadas, espera maior — ~850ms).
+- Se mesmo assim o canvas vier vazio, entra um aviso "Gráfico indisponível"
+  em vez de uma imagem quebrada (que é o que corrompia antes).
 
-## ✅ Correção
-Antes de salvar, percorremos todos os slides e trocamos o caminho dos
-gráficos de "/ppt/charts/..." para "../charts/..." (relativo). Aplicado nos
-dois exports (principal e One-Pager).
+## As 3 causas de "repair" — todas corrigidas
+1. CAMINHO DOS GRÁFICOS absoluto (/ppt/charts/) → relativo (../charts/).
+2. IMAGENS DE 0 BYTES (canvas vazio OU logo que não carregou): agora TODA
+   addImage é interceptada e imagens vazias são ignoradas.
+3. CARACTERES XML inválidos nos dados → sanitizados.
 
-## ✅ Como foi validado (rigoroso)
-- Inspeção do código-fonte do PptxGenJS: confirmado Target absoluto (linha 1910)
-- Export REAL executado com sell-out → gráficos Systane de 2 séries
-- Resultado: 6 gráficos, TODOS com caminho relativo, 0 caminhos absolutos
-- Validação exaustiva do pacote: XMLs bem-formados, todos os rels resolvem,
-  content-types completo, python-pptx lê sem erro
+## ⚠️ COMO GARANTIR QUE ESTÁ USANDO ESTA VERSÃO (importante!)
+Se o erro continuar IDÊNTICO, quase sempre é porque o arquivo testado é o
+antigo. Faça nesta ordem:
+1. Substitua o dashboard_template_v10.html pelo deste pacote.
+2. RE-RODE o sales_dashboard_v10.py (ele lê o template e gera o dashboard).
+3. Feche o dashboard antigo. Abra o NOVO dashboard_sales_insightsv10.html.
+4. Ctrl+Shift+R (limpa cache).
+5. Exporte o PowerPoint (botão PPT).
+6. Abra o .pptx recém-gerado (não um exportado antes).
 
-## ✅ Recursos reativados (não eram a causa)
-- Systane em Unidades (Tendência por Systane · Unidades)
-
-## Estado atual
-- Reordenação: DESATIVADA (mantém ordem de criação, rIds sequenciais)
-- Systane: Reais + Unidades
-- Proteções: sanitização XML + bloqueio de imagens 0 bytes + caminho relativo
-
-## Resumo de TODAS as causas de "repair" encontradas e corrigidas
-1. Imagens de 0 bytes (canvas vazio) → helper addCanvasImg
-2. Caracteres XML inválidos nos dados → sanitização addText/Table/Chart
-3. Caminho ABSOLUTO dos gráficos → conversão para relativo  ← a definitiva
-
-## ✅ Validações
-- Sintaxe JS OK (4 scripts)
-- Export real com gráficos: pacote 100% válido, caminhos relativos
+## Validação (rigorosa)
+- Export real com sell-out → 41 slides, 6 gráficos
+- 0 caminhos absolutos, 0 imagens 0-byte, 0 caracteres de controle,
+  rels resolvem, XMLs OK, python-pptx lê sem erro
