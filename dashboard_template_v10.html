@@ -13198,11 +13198,12 @@ async function exportPPTX(){
       const mesmaQtd = novaOrdem.length === slides.length;
       const semDuplicata = new Set(novaOrdem).size === novaOrdem.length;
       const todosPresentes = slides.every(s => novaOrdem.includes(s));
-      if(mesmaQtd && semDuplicata && todosPresentes){
+      // DESATIVADO: a reordenação manipulava o array interno de slides do PptxGenJS,
+      // o que podia gerar um arquivo que o PowerPoint recusava (repair). Mantemos a
+      // ordem de criação (comportamento estável, como na versão que abria sem erro).
+      if(false && mesmaQtd && semDuplicata && todosPresentes){
         pptx._slides.length = 0;
         novaOrdem.forEach(sl => pptx._slides.push(sl));
-      } else {
-        console.warn('Reorder abortado por segurança (contagem/duplicata)', {mesmaQtd, semDuplicata, todosPresentes});
       }
     } catch(e){ console.warn('Reorder falhou, mantendo ordem original', e); }
 

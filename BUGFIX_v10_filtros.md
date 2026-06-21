@@ -1,35 +1,41 @@
-# v10 - CORREÇÃO DEFINITIVA da corrupção (validada rodando o export real)
+# v10 - VERSÃO ESTÁVEL (reordenação desativada)
 
-## 🎯 CAUSA RAIZ FINAL: caracteres XML inválidos nos dados
-Dados de IQVIA/SAP frequentemente contêm caracteres de controle invisíveis
-(\x00, \x07, \x1F, etc.) e Unicode inválido dentro de nomes de produto,
-cliente ou franquia. O PptxGenJS NÃO remove esses caracteres, e o PowerPoint
-recusa qualquer XML que os contenha (erro "repair / não consegue ler").
-O LibreOffice tolerava, por isso não aparecia nos testes anteriores.
+## ✅ O que foi feito
+A reordenação automática dos slides (que reorganizava na "ordem executiva")
+foi DESATIVADA. Ela manipulava o array interno de slides do PptxGenJS, o que
+deixava as referências internas (rIds) fora de ordem sequencial. Apesar de
+ser tecnicamente válido (e o python-pptx/LibreOffice aceitarem), o PowerPoint
+recusava o arquivo ("repair").
 
-## ✅ Correção (100% — validada executando o export de verdade)
-Interceptamos addText, addTable e addChart de TODOS os slides para remover
-caracteres XML inválidos de qualquer texto antes de gravar. Aplicado nos
-dois exports (principal e One-Pager).
+Agora os slides saem na ORDEM DE CRIAÇÃO (rIds sequenciais), que é o
+comportamento estável — como na versão que abria sem erro.
 
-Como foi validado:
-- Rodei o exportPPTX REAL (PptxGenJS de verdade, não teste isolado)
-- Injetei dados com \x1F, \x07, \x00 em nomes (como dados SAP reais)
-- Forcei canvas vazios (a outra causa, já corrigida)
-- Resultado: 36 slides, 0 caracteres de controle, 0 imagens de 0 bytes,
-  arquivo lido pelo python-pptx (rígido como o PowerPoint) SEM erro
+## ✅ Proteções mantidas (não atrapalham, só ajudam)
+- Sanitização de caracteres XML inválidos (controle \x00/\x07/\x1F etc.)
+- Bloqueio de imagens de 0 bytes (canvas não renderizado)
 
-## Resumo das DUAS causas de corrupção (ambas corrigidas)
-1. Imagens de 0 bytes (canvas não renderizado) → helper addCanvasImg
-2. Caracteres XML inválidos nos dados → sanitização em addText/Table/Chart
+## ✅ Conteúdo mantido (são operações padrão e seguras)
+- Systane em Reais e Unidades
+- Slide Produtos Acima/Abaixo do Target
+- Faixas/ícones, Rede→Cliente, Insight limpo, Targets %PY, etc.
 
-## Demais entregas (mantidas)
-- Systane em Reais e Unidades (Tendência por Systane · Unidades)
-- Reorder atômico; Plano de Recuperação por último
-- Rede→Cliente; Insight sem bullets vazios; Top 15 na ordem
-- fmtNum → fmtNumR corrigido
+## Ordem atual dos slides (criação)
+Capa · Indicadores · Tipo de Cliente · Resumo (Key Accounts) ·
+Comparativa SI×SO · Insight · Plano de Ação · Evolução Mensal (SI e SO) ·
+Status Targets FOCO · Mix Franquia · Franquia comparativo ·
+Top 15 Clientes · Top 15 Produtos (Rede) · Top 15 Produtos (Distribuidor) ·
+Top 15 Crescimentos · Diagnóstico Crescimento · Top 15 Quedas ·
+Diagnóstico Queda · Systane (Reais) · Systane (Unidades) ·
+Diferença 12m (valor) · Diferença 12m (unidades) · Movers ·
+Targets Financeiros · Detalhe por Franquia · Acima/Abaixo Target ·
+Crescimento por Produto (SI e SO) · Plano de Recuperação · Agenda
 
-## ✅ Validações
-- Sintaxe JS OK (4 scripts)
+OBS: a Agenda fica por último (era reposicionada pela reordenação).
+Se quiser a "ordem executiva" de volta, dá para fazer de forma segura
+reordenando a SEQUÊNCIA DE CRIAÇÃO no código (sem mexer no array interno) —
+mas só depois de confirmar que este arquivo abre normal no PowerPoint.
+
+## ✅ Validação
 - Export REAL executado com dados problemáticos: arquivo íntegro
-- python-pptx (estrito): lê sem erro, sem caracteres inválidos
+- rIds sequenciais (ordem natural que o PowerPoint aceita)
+- python-pptx: lê sem erro
