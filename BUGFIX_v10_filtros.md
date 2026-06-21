@@ -1,27 +1,35 @@
-# v10 - Bloco C parcial: Targets Financeiros (slides 14-17)
+# v10 - Ajustes pontuais + limpeza de emojis no PowerPoint
 
-## ✅ Slides 14-17 (Targets Financeiros)
-Cards-resumo (Mês / YTD / Ano):
-- "Actual" agora mostra o valor + MÉTRICA explícita (R$ / unid. / USD)
-- Ao lado do % vs Target, incluído o % PY (variação vs ano anterior)
-  Ex.: "▼ -4,0% vs Tgt    ▲ +14,3% vs PY"
-- Emojis removidos (✅⚠️🚨 → setas ▲▼)
+## ✅ Slide 2 — faixa SELL-OUT
+Agora há DUAS faixas largas (replicando o padrão):
+- SELL-IN (ícone de fábrica)
+- SELL-OUT (M-2) (ícone de farmácia)
+Antes a faixa de sell-out estava dentro de cada card; agora é faixa única
+larga, igual à de sell-in.
 
-Tabela detalhada (por franquia/produto):
-- Já tinha vs Target e vs ano anterior (% PY)
-- Emojis removidos (✅⚠️🚨 e 🏷️)
+## ✅ Limpeza geral de emojis (PowerPoint)
+Removidos os emojis decorativos de TODOS os slides do PPT
+(🏭🏪📦📊📈📉🎯💡🔄🥧🛒🏷️ℹ️⚠️🥇🥈🥉👑✅🚨📅). Os ícones de status viraram
+setas/bolinhas (▲ ● ▼). Medalhas viraram a posição (1º, 2º, 3º).
 
-Slide Status de Targets FOCO:
-- Labels sem emoji (📦🏪✅⚠️🚨 removidos)
+## ✅ Slides 17/19 (crescimento e queda) — Redes → Clientes
+- "SELL-OUT · Redes" → "SELL-OUT · Clientes" (em crescimento e queda)
+- Ícone de cliente/produto (versão azul) adicionado nos títulos dos quadrantes
+  (sell-in e sell-out)
 
-## Recapitulando o que já está pronto
-- Bloco A: faixas/ícones slides 2, 5, 6/7 ✅
-- Bloco B: correção dos slides em branco (expande seções antes de capturar) ✅
-- Bloco C (parte): slides 14-17 Targets ✅
+## ✅ Slide 5 (Top 15 Clientes)
+- Emoji restante (⚠️ do rodapé) removido
+- Já tinha ícone de cliente nas faixas e coluna "Cliente"
+
+## Recap geral
+- Bloco A: faixas/ícones (slides 2, 5, 6/7) ✅
+- Bloco B: slides em branco corrigidos ✅
+- Bloco C (parte): Targets 14-17 ✅; ajustes pontuais 2/5/17/19 ✅
+- Limpeza de emojis no PPT ✅
 
 ## ⏭️ Ainda pendente
 - Bloco B: sell-out na tendência Systane (slide 21)
-- Bloco C: slides 21-24 design + banner; slide 25/26 detalhe por franquia
-- Bloco D: slides novos (tipo de cliente, produtos acima/abaixo target),
+- Bloco C: slides 21-24 design+banner; slide 25/26 detalhe franquia
+- Bloco D: slides novos (tipo cliente, produtos acima/abaixo target),
   agrupar Systane Complete (slide 28)
 - Bloco E: reorganização final

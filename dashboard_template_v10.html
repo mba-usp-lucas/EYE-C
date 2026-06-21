@@ -571,7 +571,7 @@ window.addEventListener('DOMContentLoaded', function(){
     }
     console.error('Bibliotecas não carregadas:', faltando.join(', '));
   } else {
-    console.log('✅ Todas as bibliotecas carregadas: SheetJS, Chart.js, PptxGenJS');
+    console.log('Todas as bibliotecas carregadas: SheetJS, Chart.js, PptxGenJS');
   }
 });
 </script>
@@ -4037,7 +4037,7 @@ function renderPlanoRecuperacao(per){
     const so = diag.soInfo;
     const diagTxt = Math.abs(so.gap) > 5
       ? (so.gap > 5 ? '⚠ SI acima do SO · risco de estoque crescendo' : '⚠ SO acima do SI · demanda forte (oportunidade)')
-      : '✅ SI e SO alinhados · canal saudável';
+      : 'SI e SO alinhados · canal saudável';
     html += `
       <div style="font-size:11px;line-height:1.6">
         <b style="color:#003595">Sell-in:</b> <span style="color:${diag.varPct>=0?'#10B981':'#DC2626'};font-weight:700">${diag.varPct>=0?'+':''}${diag.varPct.toFixed(1)}%</span><br>
@@ -4070,7 +4070,7 @@ function renderPlanoRecuperacao(per){
       `;
     });
   } else {
-    html += `<div style="font-size:11px;color:#10B981;font-style:italic">✅ Sem produtos em queda significativa.</div>`;
+    html += `<div style="font-size:11px;color:#10B981;font-style:italic">Sem produtos em queda significativa.</div>`;
   }
   html += `
         </div>
@@ -4090,7 +4090,7 @@ function renderPlanoRecuperacao(per){
       `;
     });
   } else {
-    html += `<div style="font-size:11px;color:#10B981;font-style:italic">✅ Sem clientes em queda significativa.</div>`;
+    html += `<div style="font-size:11px;color:#10B981;font-style:italic">Sem clientes em queda significativa.</div>`;
   }
   html += `
         </div>
@@ -4392,7 +4392,7 @@ function renderResumo(per){
       avisoEl.style.display = 'block';
       avisoEl.innerHTML = `
         <div style="background:#ECFDF5;border-left:4px solid #10B981;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;color:#1E3A5F">
-          <span style="font-weight:700;color:#047857">✅ Filtro ativo · valores alinhados com o KPI</span><br>
+          <span style="font-weight:700;color:#047857">Filtro ativo · valores alinhados com o KPI</span><br>
           Mostrando apenas <b>${clienteEscolhido}</b> (match exato). Linhas de outras redes do Resumo aparecem zeradas. Remova o filtro para ver todas as redes com agrupamento por palavra-chave.
         </div>
       `;
@@ -6004,7 +6004,7 @@ function renderInsights(data, per){
   if(varPct > 10) ins.push(`<b>Performance:</b> crescimento acelerado de ${varPct.toFixed(1)}% em ${mLabel} (UNID ${unidVar_R>=0?'+':''}${unidVar_R.toFixed(1)}% · BRL ${brlVar_R>=0?'+':''}${brlVar_R.toFixed(1)}%) vs ${per.labelComp}.${driverTxt}`);
   else if(varPct > 0) ins.push(`<b>Performance:</b> crescimento moderado de ${varPct.toFixed(1)}% em ${mLabel} (UNID ${unidVar_R>=0?'+':''}${unidVar_R.toFixed(1)}% · BRL ${brlVar_R>=0?'+':''}${brlVar_R.toFixed(1)}%) vs ${per.labelComp}.${driverTxt}`);
   else if(varPct > -10) ins.push(`<b>Performance:</b> desaceleração de ${Math.abs(varPct).toFixed(1)}% em ${mLabel} (UNID ${unidVar_R>=0?'+':''}${unidVar_R.toFixed(1)}% · BRL ${brlVar_R>=0?'+':''}${brlVar_R.toFixed(1)}%) vs ${per.labelComp}.${driverTxt}`);
-  else ins.push(`<b>🚨 Performance:</b> queda expressiva de ${Math.abs(varPct).toFixed(1)}% em ${mLabel} (UNID ${unidVar_R>=0?'+':''}${unidVar_R.toFixed(1)}% · BRL ${brlVar_R>=0?'+':''}${brlVar_R.toFixed(1)}%) vs ${per.labelComp}.${driverTxt}`);
+  else ins.push(`<b>Performance:</b> queda expressiva de ${Math.abs(varPct).toFixed(1)}% em ${mLabel} (UNID ${unidVar_R>=0?'+':''}${unidVar_R.toFixed(1)}% · BRL ${brlVar_R>=0?'+':''}${brlVar_R.toFixed(1)}%) vs ${per.labelComp}.${driverTxt}`);
 
   // Linha 2: Decomposição (se já calculada)
   if(window.__decompResultado){
@@ -6453,7 +6453,7 @@ function renderInsights(data, per){
 
     for(const l of linhasFr){
       const corVar = l.siVar >= 0 ? '#059669' : '#DC2626';
-      const icon = l.siVar > 5 ? '✅' : l.siVar >= 0 ? '🟢' : l.siVar > -5 ? '🟡' : l.siVar > -15 ? '⚠' : '🚨';
+      const icon = l.siVar > 5 ? '▲' : l.siVar >= 0 ? '🟢' : l.siVar > -5 ? '🟡' : l.siVar > -15 ? '⚠' : '▼';
       const setaSI = l.siVar >= 0 ? '▲' : '▼';
 
       // Driver: volume ou preço
@@ -6678,14 +6678,14 @@ function renderTargets(data, per){
     }
 
     // Cell Resultado (SI em cima, SO embaixo)
-    const iconSI = r.statusSI === 'acima' ? '✅' : (r.statusSI === 'proximo' ? '⚠' : '🚨');
+    const iconSI = r.statusSI === 'acima' ? '▲' : (r.statusSI === 'proximo' ? '⚠' : '▼');
     const corSI = r.gapSI >= 0 ? '#10b981' : '#ef4444';
     let cellResultado = `<td class="num" style="line-height:1.4">
       <div style="font-size:11px;color:#64748b;font-weight:600">SI:</div>
       <b style="color:${corSI};font-size:13px">${iconSI} ${r.gapSI>=0?'+':''}${r.gapSI.toFixed(1)}pp</b>`;
 
     if(r.statusSO !== null){
-      const iconSO = r.statusSO === 'acima' ? '✅' : (r.statusSO === 'proximo' ? '⚠' : '🚨');
+      const iconSO = r.statusSO === 'acima' ? '▲' : (r.statusSO === 'proximo' ? '⚠' : '▼');
       const corSO = r.gapSO >= 0 ? '#10b981' : '#ef4444';
       cellResultado += `<div style="margin-top:4px"><span style="font-size:11px;color:#64748b;font-weight:600">SO:</span> <b style="color:${corSO};font-size:13px">${iconSO} ${r.gapSO>=0?'+':''}${r.gapSO.toFixed(1)}pp</b></div>`;
     } else {
@@ -6758,7 +6758,7 @@ function renderTargetsFinanceiros(data, per){
         ⚠ <b>Target em ${mapLabel[metrica]} não preenchido</b><br>
         <span style="font-size:12px">A coluna <b>${colunaFalta}</b> do arquivo de targets está vazia ou zerada.</span><br>
         ${outras.length > 0
-          ? `<span style="font-size:12px;color:#10B981;margin-top:8px;display:inline-block">✅ Há targets cadastrados em: <b>${outras.join(' · ')}</b>. Mude a métrica no topo da tela.</span>`
+          ? `<span style="font-size:12px;color:#10B981;margin-top:8px;display:inline-block">Há targets cadastrados em: <b>${outras.join(' · ')}</b>. Mude a métrica no topo da tela.</span>`
           : `<span style="font-size:12px">Nenhuma outra métrica tem target cadastrado.</span>`}
         <br><span style="font-size:11px;color:#64748b;font-style:italic;margin-top:6px;display:inline-block">Para evitar comparações inconsistentes, esta visualização foi suprimida.</span>
       </div>
@@ -6835,14 +6835,14 @@ function renderTargetsFinanceiros(data, per){
           <div class="target-fin-label">${mesNome}/${anoAtual}</div>
           <div class="target-fin-real">${fmt(realMes)}</div>
           <div class="target-fin-vs">Target: ${fmt(targetMesTotal)}</div>
-          <div class="target-fin-gap ${gapMes.corClasse}">${gapMes.pct >= 0 ? '✅' : (gapMes.pct >= -10 ? '⚠' : '🚨')} ${gapMes.label}</div>
+          <div class="target-fin-gap ${gapMes.corClasse}">${gapMes.pct >= 0 ? '▲' : (gapMes.pct >= -10 ? '⚠' : '▼')} ${gapMes.label}</div>
         </div>
 
         <div class="target-fin-stat ${gapYTD.cls === 'danger' ? 'danger' : gapYTD.cls === 'warn' ? 'warn' : ''}">
           <div class="target-fin-label">YTD ${anoAtual} (Jan-${mesNome})</div>
           <div class="target-fin-real">${fmt(realYTD)}</div>
           <div class="target-fin-vs">Target: ${fmt(targetYTDTotal)}</div>
-          <div class="target-fin-gap ${gapYTD.corClasse}">${gapYTD.pct >= 0 ? '✅' : (gapYTD.pct >= -10 ? '⚠' : '🚨')} ${gapYTD.label}</div>
+          <div class="target-fin-gap ${gapYTD.corClasse}">${gapYTD.pct >= 0 ? '▲' : (gapYTD.pct >= -10 ? '⚠' : '▼')} ${gapYTD.label}</div>
         </div>
 
         ${targetAnoTotal > 0 ? `
@@ -6850,7 +6850,7 @@ function renderTargetsFinanceiros(data, per){
           <div class="target-fin-label">Anual (proj.)</div>
           <div class="target-fin-real">${fmt(projecaoAno)}</div>
           <div class="target-fin-vs">Target: ${fmt(targetAnoTotal)}</div>
-          <div class="target-fin-gap ${gapAno.corClasse}">${gapAno.pct >= 0 ? '✅' : (gapAno.pct >= -10 ? '⚠' : '🚨')} ${gapAno.label}</div>
+          <div class="target-fin-gap ${gapAno.corClasse}">${gapAno.pct >= 0 ? '▲' : (gapAno.pct >= -10 ? '⚠' : '▼')} ${gapAno.label}</div>
         </div>
         ` : ''}
       </div>
@@ -6970,7 +6970,7 @@ function renderTargetsFinanceiros(data, per){
         if(!tgt) return '<span style="color:#94a3b8">—</span>';
         const gap = (real/tgt*100) - 100;
         const cor = gap >= 0 ? '#10b981' : (gap >= -10 ? '#D97706' : '#ef4444');
-        const ic = gap >= 0 ? '✅' : (gap >= -10 ? '⚠' : '🚨');
+        const ic = gap >= 0 ? '▲' : (gap >= -10 ? '⚠' : '▼');
         return `<b style="color:${cor}">${ic} ${gap>=0?'+':''}${gap.toFixed(0)}%</b>`;
       };
       // Variação vs ano anterior (YoY): só o %
@@ -6986,9 +6986,9 @@ function renderTargetsFinanceiros(data, per){
         <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div style="font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase">Detalhe por Franquia e Produto</div>
           <div style="font-size:11px;display:flex;gap:10px">
-            <span style="color:#10b981;font-weight:600">✅ ${nAcima} no alvo</span>
+            <span style="color:#10b981;font-weight:600">${nAcima} no alvo</span>
             <span style="color:#D97706;font-weight:600">⚠ ${nAlerta} em alerta</span>
-            <span style="color:#ef4444;font-weight:600">🚨 ${nCritico} crítico</span>
+            <span style="color:#ef4444;font-weight:600">${nCritico} crítico</span>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -7757,7 +7757,7 @@ function renderTopClientes(data, per){
     return {cliente:c, tipo:atual[c].tipo, atual:a, comp:cp, dAbs:a-cp, dPct:cp?((a-cp)/cp*100):(a>0?100:0)};
   }).sort((a,b)=>b.atual-a.atual).slice(0,15);
   document.querySelector('#tabelaClientes tbody').innerHTML = linhas.map((r,i)=>{
-    const trend = r.dPct>=10?'Forte alta':r.dPct>=0?'Alta':r.dPct>=-10?'Queda':'🚨 Forte queda';
+    const trend = r.dPct>=10?'Forte alta':r.dPct>=0?'Alta':r.dPct>=-10?'Queda':'Forte queda';
     return `<tr>
       <td><span class="rank ${i<3?'top3':''}">${i+1}</span></td>
       <td><b>${r.cliente}</b></td>
@@ -7851,7 +7851,7 @@ function renderTopClientesSO(per){
   }).filter(r => r.atual > 0).sort((a,b)=>b.atual-a.atual).slice(0,15);
 
   document.querySelector('#tabelaClientes tbody').innerHTML = linhas.map((r,i)=>{
-    const trend = r.dPct>=10?'Forte alta':r.dPct>=0?'Alta':r.dPct>=-10?'Queda':'🚨 Forte queda';
+    const trend = r.dPct>=10?'Forte alta':r.dPct>=0?'Alta':r.dPct>=-10?'Queda':'Forte queda';
     // Aviso de canal misto: se cliente é distribuidor, está mostrando todos canais
     const ehDist = clienteEhDistribuidor(r.cliente);
     const canalLabel = ehDist
@@ -7897,7 +7897,7 @@ function renderTopProdutos(data, per){
       targetCell = `<td class="num" style="color:var(--alcon-purple);font-weight:700">${r.target.toFixed(1)}%</td>`;
       const status = r.gapTarget >= 0 ? 'pos' : 'neg';
       const arrow = r.gapTarget >= 0 ? '▲' : '▼';
-      const icone = r.gapTarget >= 0 ? '✅' : (r.gapTarget >= -5 ? '⚠' : '🚨');
+      const icone = r.gapTarget >= 0 ? '▲' : (r.gapTarget >= -5 ? '⚠' : '▼');
       gapCell = `<td class="num"><span class="variation ${status}">${icone} ${arrow} ${Math.abs(r.gapTarget).toFixed(1)}pp</span></td>`;
     }
     return `<tr>
@@ -8396,7 +8396,7 @@ function renderDiagnostico(data, per, listaClientes, listaProdutos, brlPorChave)
 
   const quedaContent = document.getElementById('diagnosticoQuedaContent');
   if(quedaProds.length === 0){
-    quedaContent.innerHTML = '<div class="diagnostico-vazio">✅ Nenhum produto relevante (≥ R$ 100k) em queda neste filtro.</div>';
+    quedaContent.innerHTML = '<div class="diagnostico-vazio">Nenhum produto relevante (≥ R$ 100k) em queda neste filtro.</div>';
   } else {
     const blocosQ = [];
 
@@ -8518,7 +8518,7 @@ async function exportOnePager(){
   const btn = document.getElementById('btnOnePager');
   btn.disabled = true;
   const txtOriginal = btn.textContent;
-  btn.textContent = '⏳ Gerando...';
+  btn.textContent = 'Gerando...';
 
   try {
     if(typeof PptxGenJS === 'undefined'){
@@ -8810,7 +8810,7 @@ async function exportOnePager(){
       // Linha 2: contagem por categoria
       const yLinha2 = yBaseSO + 0.78;
       slide.addText([
-        {text:'✅ ', options:{fontSize:11}},
+        {text:'', options:{fontSize:11}},
         {text:`${nSaudavel} saudáveis`, options:{fontSize:10, bold:true, color:'059669'}},
         {text:'    ⚠ ', options:{fontSize:11}},
         {text:`${nEmpurrado} empurradas (SI > SO em 10pp+)`, options:{fontSize:10, bold:true, color:'D97706'}},
@@ -9112,7 +9112,7 @@ async function exportPPTX(){
 
   const btn = document.getElementById('btnPptx');
   const txtOrig = btn.innerHTML;
-  btn.innerHTML = '⏳ Gerando...';
+  btn.innerHTML = 'Gerando...';
   btn.disabled = true;
 
   // Garantir que os gráficos estejam renderizados antes de capturar para o PPT.
@@ -9204,7 +9204,7 @@ async function exportPPTX(){
       // Rodapé padronizado (todos os slides) — alinhado à DIREITA p/ não colidir com notas de tabela à esquerda
       slide.addText([
         {text:'Business Use Only', options:{bold:true, color:'5B6B7E'}},
-        {text:'   ·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}}
+        {text:'·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}}
       ], {
         x:4.6, y:7.12, w:8.43, h:0.3,
         fontSize:9, fontFace:'Arial', align:'right'
@@ -9384,25 +9384,25 @@ async function exportPPTX(){
       s2.addText(kpi.label, {x:x+0.2, y:1.2, w:2.7, h:0.3, fontSize:9, color:'003595', bold:true});
       s2.addText(kpi.valor, {x:x+0.2, y:1.53, w:2.8, h:0.55, fontSize:20, bold:true, color:AZUL_ESCURO});
       s2.addText(kpi.sub, {x:x+0.2, y:2.08, w:2.8, h:0.25, fontSize:9, color:CINZA});
-
-      // SELL-OUT (parte de baixo, se disponível) - FONTES IGUAIS AO SI
-      if(kpi.so){
-        // Faixa sell-out dentro do card com ícone farmácia
-        s2.addShape('rect', {x:x+0.08, y:2.38, w:2.92, h:0.3, fill:{color:'1E40AF'}, line:{type:'none'}});
-        if(typeof ICON_FARMACIA !== 'undefined') s2.addImage({data:ICON_FARMACIA, x:x+0.16, y:2.42, w:0.22, h:0.22});
-        s2.addText('Sell-out', {x:x+0.44, y:2.38, w:2.5, h:0.3, fontSize:9, color:BRANCO, bold:true, valign:'middle'});
-        // Valor SO (MESMO tamanho do SI: fontSize 20)
-        s2.addText(kpi.so.valor, {x:x+0.2, y:2.74, w:2.8, h:0.5, fontSize:19, bold:true, color:AZUL_ESCURO});
-        // Badge variação
+    });
+    // Faixa "SELL-OUT" larga (igual à SELL-IN) com ícone de farmácia — só com sell-out
+    if(soKpi){
+      s2.addShape('rect', {x:0.3, y:2.42, w:12.73, h:0.34, fill:{color:'1E40AF'}, line:{type:'none'}});
+      if(typeof ICON_FARMACIA !== 'undefined') s2.addImage({data:ICON_FARMACIA, x:0.42, y:2.46, w:0.26, h:0.26});
+      s2.addText('SELL-OUT (M-2)', {x:0.78, y:2.42, w:6, h:0.34, fontSize:12, bold:true, color:BRANCO, valign:'middle', fontFace:'Arial'});
+      kpis.forEach((kpi, i) => {
+        if(!kpi.so) return;
+        const x = 0.3 + i*3.2;
+        s2.addText(kpi.so.valor, {x:x+0.2, y:2.86, w:2.8, h:0.5, fontSize:19, bold:true, color:AZUL_ESCURO});
         const corVar = kpi.so.varPct >= 0 ? VERDE : VERMELHO;
         const sinalSeta = kpi.so.varPct >= 0 ? '▲' : '▼';
         if(!String(kpi.so.valor).includes('%')){
           s2.addText(`${sinalSeta} ${kpi.so.varPct>=0?'+':'-'}${Math.abs(kpi.so.varPct).toFixed(1)}%`, {
-            x:x+0.2, y:3.22, w:2.8, h:0.22, fontSize:9, bold:true, color: corVar, align:'left'
+            x:x+0.2, y:3.34, w:2.8, h:0.22, fontSize:9, bold:true, color: corVar, align:'left'
           });
         }
-      }
-    });
+      });
+    }
 
     // Benchmark se houver cliente filtrado
     const yBench = soKpi ? 3.95 : 2.85;
@@ -9418,7 +9418,7 @@ async function exportPPTX(){
       const posCliente = todosDoTipo.findIndex(r => r.cliente === clienteSelecionado) + 1;
       const clienteRow = todosDoTipo.find(r => r.cliente === clienteSelecionado);
 
-      s2.addText(`🎯 Benchmark vs Top 3 do tipo ${tipoDoCliente} · Posição: ${posCliente}º de ${todosDoTipo.length}`, {
+      s2.addText(`Benchmark vs Top 3 do tipo ${tipoDoCliente} · Posição: ${posCliente}º de ${todosDoTipo.length}`, {
         x:0.3, y:yBench, w:12.7, h:0.4, fontSize:14, bold:true, color:AZUL
       });
 
@@ -9437,7 +9437,7 @@ async function exportPPTX(){
         const realPos = todosDoTipo.findIndex(x => x.cliente === r.cliente) + 1;
         const isSel = r.cliente === clienteSelecionado;
         const fillRow = isSel ? 'FEF3C7' : BRANCO;
-        const medal = realPos===1?'🥇':realPos===2?'🥈':realPos===3?'🥉':`${realPos}º`;
+        const medal = `${realPos}º`;
         rowsB.push([
           {text:medal, options:{fill:{color:fillRow}, align:'center', bold:isSel}},
           {text: isSel ? `${r.cliente} ← VOCÊ` : r.cliente, options:{fill:{color:fillRow}, bold:isSel}},
@@ -9448,7 +9448,7 @@ async function exportPPTX(){
       });
       s2.addTable(rowsB, {x:0.3, y:yBench+0.5, w:12.7, colW:[1.2, 5.5, 2, 2, 2], fontSize:11, border:{type:'solid', pt:1, color:'E5E7EB'}});
     } else {
-      s2.addText('ℹ️ Benchmark indisponível: aplique filtro de cliente específico para visualizar.', {
+      s2.addText('Benchmark indisponível: aplique filtro de cliente específico para visualizar.', {
         x:0.3, y:yBench+0.1, w:12.7, h:0.5, fontSize:12, italic:true, color:CINZA, align:'center', fill:{color:'F8FAFC'}, valign:'middle', margin:8
       });
     }
@@ -9459,7 +9459,7 @@ async function exportPPTX(){
     if(window.__franquiaResultado && window.__franquiaResultado.length > 0){
       const linhasFr_s2 = window.__franquiaResultado;
       const yFrSec = soKpi ? 5.4 : 4.7;  // posição após benchmark
-      s2.addText('📊 Análise por Franquia · Variação YoY', {
+      s2.addText('Análise por Franquia · Variação YoY', {
         x:0.3, y:yFrSec, w:12.7, h:0.35, fontSize:14, bold:true, color:AZUL, fontFace:'Open Sans'
       });
 
@@ -9569,7 +9569,7 @@ async function exportPPTX(){
           const x = 4.7 + i*4.3;
           sTC.addShape(pptx.ShapeType.rect, {x, y:1.0, w:4.1, h:1.0, fill:{color:'FFFFFF'}, line:{color: l.siVar>=0?'059669':'DC2626', width:2}});
           sTC.addText([
-            {text:`🏪 ${l.tipo}\n`, options:{fontSize:12, bold:true, color:'1E3A5F'}},
+            {text:`${l.tipo}\n`, options:{fontSize:12, bold:true, color:'1E3A5F'}},
             {text:`${fmt(l.siAtual)}  `, options:{fontSize:14, bold:true, color:'1E3A5F'}},
             {text:`${l.siVar>=0?'▲ +':'▼ '}${l.siVar.toFixed(1)}%`, options:{fontSize:12, bold:true, color: l.siVar>=0?VERDE:VERMELHO}}
           ], {x:x+0.15, y:1.1, w:3.8, h:0.8, valign:'middle'});
@@ -9587,7 +9587,7 @@ async function exportPPTX(){
           const corSI = l.siVar>=0?'059669':'DC2626';
           const corSO = l.soVar>=0?'059669':'DC2626';
           rowsTC.push([
-            {text:`🏪 ${l.tipo}`, options:{bold:true, fontSize:11, color:'1E3A5F'}},
+            {text:`${l.tipo}`, options:{bold:true, fontSize:11, color:'1E3A5F'}},
             {text:fmt(l.siAtual), options:{align:'right', fontSize:11}},
             {text:`${l.siVar>=0?'▲ +':'▼ '}${l.siVar.toFixed(1)}%`, options:{align:'right', bold:true, color:corSI, fontSize:11}},
             {text: l.temSO?`${l.soVar>=0?'▲ +':'▼ '}${l.soVar.toFixed(1)}%`:'n/d', options:{align:'right', bold:true, color: l.temSO?corSO:'94A3B8', fontSize:11}},
@@ -9923,7 +9923,7 @@ async function exportPPTX(){
       const _lblSOAtual = _soPcomp ? _soPcomp.labelAtualSO : `${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano}`;
       const _lblSOComp = _soPcomp ? _soPcomp.labelCompSO : `${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano-1}`;
       sComp.addText(
-        `⚠️ Sell-out tem 2 meses de defasagem. Comparativo: Sell-in (${per.labelAtual} vs ${per.labelComp}) × Sell-out (${_lblSOAtual} vs ${_lblSOComp}).`,
+        `Sell-out tem 2 meses de defasagem. Comparativo: Sell-in (${per.labelAtual} vs ${per.labelComp}) × Sell-out (${_lblSOAtual} vs ${_lblSOComp}).`,
         {x:0.3, y:0.9, w:12.7, h:0.4, fontSize:10, italic:true, color:'78350F', fill:{color:'FEF3C7'}, align:'left', margin:8, valign:'middle'}
       );
 
@@ -10053,10 +10053,10 @@ async function exportPPTX(){
 
       // Renderizar 4 quadrantes (2x2)
       const blocos = [
-        {classe:'empurrado', titulo:'🚨 ESTOQUE CRESCENDO', subtitulo:'(SI cresce mais que SO)', cor:'9B1A2D', fill:'FEF2F2', x:0.3, y:1.5},
+        {classe:'empurrado', titulo:'ESTOQUE CRESCENDO', subtitulo:'(SI cresce mais que SO)', cor:'9B1A2D', fill:'FEF2F2', x:0.3, y:1.5},
         {classe:'ruptura', titulo:'🆘 RUPTURA / OPORTUNIDADE', subtitulo:'(SO cresce mais que SI)', cor:'B45309', fill:'FFFBEB', x:6.7, y:1.5},
-        {classe:'saudavel', titulo:'✅ SAUDÁVEL', subtitulo:'(gap ≤ 5pp)', cor:'00AE44', fill:'F0FDF4', x:0.3, y:4.0},
-        {classe:'queda', titulo:'📉 AMBOS EM QUEDA', subtitulo:'(demanda real caindo)', cor:'475569', fill:'F8FAFC', x:6.7, y:4.0}
+        {classe:'saudavel', titulo:'SAUDÁVEL', subtitulo:'(gap ≤ 5pp)', cor:'00AE44', fill:'F0FDF4', x:0.3, y:4.0},
+        {classe:'queda', titulo:'AMBOS EM QUEDA', subtitulo:'(demanda real caindo)', cor:'475569', fill:'F8FAFC', x:6.7, y:4.0}
       ];
 
       blocos.forEach(b => {
@@ -10069,8 +10069,8 @@ async function exportPPTX(){
 
         // Conteúdo: 3 níveis (Produto, Rede, Franquia) - top 2 cada
         const niveis = [
-          {label:'Produto', dict:cruzProd, badge:'📦'},
-          {label:'Rede', dict:cruzRede, badge:'🏪'},
+          {label:'Produto', dict:cruzProd, badge:''},
+          {label:'Rede', dict:cruzRede, badge:''},
           {label:'Franquia', dict:cruzFr, badge:'🔬'}
         ];
         let yOffset = b.y + 0.6;
@@ -10107,7 +10107,7 @@ async function exportPPTX(){
       });
 
       // Rodapé
-      sComp.addText('💡 Mostrando até 3 itens por categoria, em cada nível (Produto, Rede, Franquia). Threshold: produtos e redes com sell-in ≥ R$ 100k.', {
+      sComp.addText('Mostrando até 3 itens por categoria, em cada nível (Produto, Rede, Franquia). Threshold: produtos e redes com sell-in ≥ R$ 100k.', {
         x:0.3, y:6.6, w:12.7, h:0.3, fontSize:9, italic:true, color:CINZA, align:'center'
       });
     }
@@ -10184,7 +10184,7 @@ async function exportPPTX(){
       const valC = metricaAtual==='UNID'?unidC:(metricaAtual==='BRL'?brlC:somarMetricaFrS3(baseFr,per.periodoComp,COLS.VALOR_USD));
       const varPct = valC ? ((valA-valC)/valC*100) : 0;
 
-      const icon = varPct > 5 ? '✅' : varPct >= 0 ? '🟢' : varPct > -5 ? '🟡' : varPct > -15 ? '⚠️' : '🚨';
+      const icon = varPct > 5 ? '▲' : varPct >= 0 ? '🟢' : varPct > -5 ? '🟡' : varPct > -15 ? '●' : '▼';
       const seta = varPct >= 0 ? '▲' : '▼';
       bullets.push({lvl:0, txt:`${icon} ${nomeFranquia}: ${seta} ${varPct>=0?'+':''}${varPct.toFixed(1)}% em ${mLabel} (${fmt(valA)})`});
 
@@ -10325,7 +10325,7 @@ async function exportPPTX(){
         const totalCliG = valoresCliG.reduce((s,v)=>s+v,0);
         const top5G = valoresCliG.slice(0,5).reduce((s,v)=>s+v,0);
         const concG = totalCliG > 0 ? (top5G/totalCliG*100) : 0;
-        const concIcon = concG >= 80 ? '⚠️ Alta concentração' : (concG >= 60 ? 'Concentração' : 'Distribuição equilibrada');
+        const concIcon = concG >= 80 ? 'Alta concentração' : (concG >= 60 ? 'Concentração' : 'Distribuição equilibrada');
         allBullets.push({lvl:1, txt:`${concIcon}: Top 5 clientes = ${concG.toFixed(1)}% do faturamento do grupo`});
 
         // Sell-out cruzado do grupo (se disponível)
@@ -10336,14 +10336,14 @@ async function exportPPTX(){
           const gapG = varPct - soG.soVar;
           let txtSOG;
           if(varPct >= 0 && soG.soVar >= 0){
-            if(gapG > 10) txtSOG = `⚠️ Risco de excesso de estoque: SI ${gapG.toFixed(1)}pp acima do SO`;
+            if(gapG > 10) txtSOG = `Risco de excesso de estoque: SI ${gapG.toFixed(1)}pp acima do SO`;
             else if(gapG > 5) txtSOG = `Atenção ao giro: SI ${gapG.toFixed(1)}pp acima do SO`;
             else if(Math.abs(gapG) <= 5) txtSOG = `Equilíbrio canal × demanda (gap ${gapG>=0?'+':''}${gapG.toFixed(1)}pp)`;
             else txtSOG = `Possível ruptura: SO ${Math.abs(gapG).toFixed(1)}pp acima do SI`;
           } else if(varPct < 0 && soG.soVar >= 0){
             txtSOG = `Demanda positiva, abastecimento em retração (SI ${varPct.toFixed(1)}% vs SO +${soG.soVar.toFixed(1)}%)`;
           } else if(varPct >= 0 && soG.soVar < 0){
-            txtSOG = `⚠️ Excesso de estoque no canal: SI +${varPct.toFixed(1)}% vs SO ${soG.soVar.toFixed(1)}%`;
+            txtSOG = `Excesso de estoque no canal: SI +${varPct.toFixed(1)}% vs SO ${soG.soVar.toFixed(1)}%`;
           } else {
             txtSOG = `Retração compartilhada: SI ${varPct.toFixed(1)}% e SO ${soG.soVar.toFixed(1)}%`;
           }
@@ -10463,7 +10463,7 @@ async function exportPPTX(){
       sDecomp.addText([
         {text:'Δ TOTAL: ', options:{fontSize:14, bold:true, color:'003595'}},
         {text:`${setaDelta} ${fmtMoeda(d.deltaTotal)}`, options:{fontSize:24, bold:true, color: corDelta}},
-        {text:`  (${d.pctTotal >= 0 ? '+' : ''}${d.pctTotal.toFixed(1)}%)`, options:{fontSize:16, bold:true, color: corDelta}}
+        {text:`(${d.pctTotal >= 0 ? '+' : ''}${d.pctTotal.toFixed(1)}%)`, options:{fontSize:16, bold:true, color: corDelta}}
       ], {
         x:0.7, y:1.05, w:12, h:0.55, valign:'top'
       });
@@ -10613,7 +10613,7 @@ async function exportPPTX(){
               {text: a.nome, options:{bold:true, fontSize:8.5, color:'1E3A5F'}},
               {text: `${sinal}${fmt(Math.abs(a.impactoSinal))}`, options:{align:'right', bold:true, color:cor, fontSize:9}},
               {text: `${a.dPct >= 0 ? '+' : ''}${a.dPct.toFixed(1)}%`, options:{align:'right', color:cor, fontSize:8}},
-              {text: `${a.diagnostico}\n💡 ${a.acao}`, options:{fontSize:7, color:'334155', valign:'middle'}}
+              {text: `${a.diagnostico}\n${a.acao}`, options:{fontSize:7, color:'334155', valign:'middle'}}
             ]);
           });
           return rs;
@@ -10621,7 +10621,7 @@ async function exportPPTX(){
 
         // TABELA 1: PRODUTOS (lado esquerdo, metade superior)
         const yT = 1.8;
-        sPlano.addText('📦 Ações por PRODUTO', {x:0.5, y:yT-0.28, w:6.3, h:0.25, fontSize:12, bold:true, color:'003595', fontFace:'Open Sans'});
+        sPlano.addText('Ações por PRODUTO', {x:0.5, y:yT-0.28, w:6.3, h:0.25, fontSize:12, bold:true, color:'003595', fontFace:'Open Sans'});
         sPlano.addTable(montarLinhas(acoesProduto, '0F2744'), {
           x:0.5, y:yT, w:6.25,
           colW:[0.45, 1.7, 1.1, 0.7, 2.3],
@@ -10630,7 +10630,7 @@ async function exportPPTX(){
         });
 
         // TABELA 2: CLIENTES (lado direito)
-        sPlano.addText('🏪 Ações por CLIENTE', {x:7.0, y:yT-0.28, w:6.3, h:0.25, fontSize:12, bold:true, color:'003595', fontFace:'Open Sans'});
+        sPlano.addText('Ações por CLIENTE', {x:7.0, y:yT-0.28, w:6.3, h:0.25, fontSize:12, bold:true, color:'003595', fontFace:'Open Sans'});
         sPlano.addTable(montarLinhas(acoesCliente, '1E40AF'), {
           x:7.0, y:yT, w:6.3,
           colW:[0.45, 1.7, 1.1, 0.7, 2.35],
@@ -10668,7 +10668,7 @@ async function exportPPTX(){
       if(chartSO){
         sEvoSO.addImage({data:chartSO.toDataURL('image/png', 1.0), x:0.5, y:1.0, w:12.3, h:5.8});
       }
-      sEvoSO.addText(`⚠️ Sell-out tem 2 meses de defasagem (M-2). Última atualização: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano}. Filtros de Franquia, Tipo de Cliente e Produto são aplicados.`, {
+      sEvoSO.addText(`Sell-out tem 2 meses de defasagem (M-2). Última atualização: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano}. Filtros de Franquia, Tipo de Cliente e Produto são aplicados.`, {
         x:0.5, y:6.9, w:12.3, h:0.3, fontSize:10, italic:true, color:CINZA, align:'center'
       });
     }
@@ -10801,8 +10801,8 @@ async function exportPPTX(){
 
         const rowsTgt = [[
           {text:'Produto', options:{bold:true, color:BRANCO, fill:{color:headerColor}}},
-          {text:'🏭 Sell-in', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
-          {text:'🏪 Sell-out', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
+          {text:'Sell-in', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
+          {text:'Sell-out', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
           {text:'Target', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
           {text:'Resultado SI', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}},
           {text:'Resultado SO', options:{bold:true, color:BRANCO, fill:{color:headerColor}, align:'right'}}
@@ -10810,8 +10810,8 @@ async function exportPPTX(){
 
         const maxRows = temSOPpt ? 14 : 18;
         linhasTgt.slice(0, maxRows).forEach(r => {
-          const iconSI = r.gap >= 0 ? '✅' : (r.gap >= -5 ? '⚠️' : '🚨');
-          const iconSO = r.gapSO === null ? '—' : (r.gapSO >= 0 ? '✅' : (r.gapSO >= -5 ? '⚠️' : '🚨'));
+          const iconSI = r.gap >= 0 ? '▲' : (r.gap >= -5 ? '●' : '▼');
+          const iconSO = r.gapSO === null ? '—' : (r.gapSO >= 0 ? '▲' : (r.gapSO >= -5 ? '●' : '▼'));
 
           // Cell Sell-in (atual + cresc)
           const cellSI = `${fmt(r.atual)}\n${r.dPct>=0?'+':'-'}${Math.abs(r.dPct).toFixed(1)}%`;
@@ -10834,7 +10834,7 @@ async function exportPPTX(){
         // Aviso M-2 no rodapé se tiver SO
         if(temSOPpt){
           const ultMesPpt = selloutUltimoPeriodo;
-          sTgt.addText(`⚠️ Sell-out tem 2 meses de defasagem (M-2). Última atualização: ${MESES_NOME[ultMesPpt.mes-1]}/${ultMesPpt.ano}.`, {
+          sTgt.addText(`Sell-out tem 2 meses de defasagem (M-2). Última atualização: ${MESES_NOME[ultMesPpt.mes-1]}/${ultMesPpt.ano}.`, {
             x:0.3, y:6.95, w:12.7, h:0.3, fontSize:9, italic:true, color:CINZA, align:'center'
           });
         }
@@ -10938,7 +10938,7 @@ async function exportPPTX(){
 
     // Aviso M-2 no rodapé
     if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
-      s6.addText(`⚠️ Sell-out: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano} (M-2: defasagem de 2 meses vs sell-in)`, {
+      s6.addText(`Sell-out: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano} (M-2: defasagem de 2 meses vs sell-in)`, {
         x:0.3, y:6.7, w:12.7, h:0.3, fontSize:9, italic:true, color:CINZA, fontFace:'Open Sans', align:'center'
       });
     }
@@ -11043,7 +11043,7 @@ async function exportPPTX(){
       s.addTable(rowsSO, {x:6.7, y:1.2, w:6.3, colW:[0.4, 3.0, 1.5, 1.4], fontSize:9, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
 
       if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
-        s.addText(`⚠️ Sell-out: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano} (M-2) · Canal: ${canalNome} (TIPO_CLIENTE)`, {
+        s.addText(`Sell-out: ${MESES_NOME[selloutUltimoPeriodo.mes-1]}/${selloutUltimoPeriodo.ano} (M-2) · Canal: ${canalNome} (TIPO_CLIENTE)`, {
           x:0.3, y:6.7, w:12.7, h:0.3, fontSize:9, italic:true, color:CINZA, fontFace:'Open Sans', align:'center'
         });
       }
@@ -11222,7 +11222,11 @@ async function exportPPTX(){
 
     // Helper para renderizar quadrante (cabeçalho + tabela)
     function renderQuadranteCresce(slide, x, y, w, h, titulo, corHeader, items, vazioMsg){
-      slide.addText(titulo, {x:x, y:y, w:w, h:0.3, fontSize:11, bold:true, color:corHeader, fontFace:'Open Sans'});
+      // Ícone conforme o tipo (cliente ou produto), versão azul
+      const _ic = titulo.includes('Cliente') ? (typeof ICON_CLIENTE_AZ!=='undefined'?ICON_CLIENTE_AZ:null)
+                : titulo.includes('Produto') ? (typeof ICON_PRODUTO_AZ!=='undefined'?ICON_PRODUTO_AZ:null) : null;
+      if(_ic) slide.addImage({data:_ic, x:x, y:y, w:0.24, h:0.24});
+      slide.addText(titulo, {x:x+(_ic?0.3:0), y:y, w:w-(_ic?0.3:0), h:0.3, fontSize:11, bold:true, color:corHeader, fontFace:'Open Sans'});
       if(items.length > 0){
         const rows = [[
           {text:'#', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'center', fontSize:8}},
@@ -11256,7 +11260,7 @@ async function exportPPTX(){
     // Quadrante 3 (bottom-left): Sell-out Redes
     if(temSOSlide){
       renderQuadranteCresce(sTC, 0.3, 4.05, 6.3, 2.7,
-        'SELL-OUT · Redes', '1E40AF', cresceCliSO, 'Sem redes em crescimento');
+        'SELL-OUT · Clientes', '1E40AF', cresceCliSO, 'Sem clientes em crescimento');
 
       // Quadrante 4 (bottom-right): Sell-out Produtos
       renderQuadranteCresce(sTC, 6.8, 4.05, 6.3, 2.7,
@@ -11284,7 +11288,7 @@ async function exportPPTX(){
     const totalCrescAbs = cresceProds.reduce((s,p) => s + p.dAbs, 0);
 
     // ============ COLUNA ESQUERDA: SELL-IN ============
-    s8.addText('🏭 SELL-IN', {x:0.3, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
+    s8.addText('SELL-IN', {x:0.3, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
 
     if(cresceProds.length === 0){
       s8.addText('Sem produtos relevantes em crescimento.', {
@@ -11304,7 +11308,7 @@ async function exportPPTX(){
         blocosTop3.push({text:`${idx+1}. ${p.nome}`, options:{fontSize:10, bold:true, color:'1f2937', breakLine:true}});
         blocosTop3.push({text:`+${fmt(p.dAbs)} (+${p.dPct.toFixed(1)}%) · ${pesoP.toFixed(0)}% do crescimento`, options:{fontSize:9, color:VERDE, bold:true, breakLine:true}});
         clientesDoProd.forEach(c => {
-          blocosTop3.push({text:`   • ${c.nome}: +${fmt(c.dAbs)} (+${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
+          blocosTop3.push({text:`• ${c.nome}: +${fmt(c.dAbs)} (+${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
         });
       });
       s8.addText(blocosTop3, {x:0.3, y:1.2, w:6.3, h:3.6, fill:{color:'EFF6FF'}, valign:'top', margin:10, line:{color:AZUL, width:1}});
@@ -11324,7 +11328,7 @@ async function exportPPTX(){
     }
 
     // ============ COLUNA DIREITA: SELL-OUT ============
-    s8.addText(`🏪 SELL-OUT${labelSOPeriodo ? ' · ' + labelSOPeriodo : ''}`, {x:6.8, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
+    s8.addText(`SELL-OUT${labelSOPeriodo ? ' · ' + labelSOPeriodo : ''}`, {x:6.8, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
 
     if(!temSOSlide){
       s8.addText('Sell-out não disponível neste filtro.', {
@@ -11353,7 +11357,7 @@ async function exportPPTX(){
           blocosTop3SO.push({text:`${idx+1}. ${p.nome}`, options:{fontSize:10, bold:true, color:'1f2937', breakLine:true}});
           blocosTop3SO.push({text:`+${fmt(p.dAbs)} (+${p.dPct.toFixed(1)}%) · ${pesoPSO.toFixed(0)}% do crescimento`, options:{fontSize:9, color:VERDE, bold:true, breakLine:true}});
           redesDoProd.forEach(c => {
-            blocosTop3SO.push({text:`   • ${c.nome}: +${fmt(c.dAbs)} (+${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
+            blocosTop3SO.push({text:`• ${c.nome}: +${fmt(c.dAbs)} (+${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
           });
         });
         s8.addText(blocosTop3SO, {x:6.8, y:1.2, w:6.3, h:3.6, fill:{color:'F0F9FF'}, valign:'top', margin:10, line:{color:'1E40AF', width:1}});
@@ -11407,7 +11411,10 @@ async function exportPPTX(){
     const quedaCliSOP = adicionarPeso(quedaCliSO);
 
     function renderQuadranteQueda(slide, x, y, w, h, titulo, corHeader, items, vazioMsg){
-      slide.addText(titulo, {x:x, y:y, w:w, h:0.3, fontSize:11, bold:true, color:corHeader, fontFace:'Open Sans'});
+      const _ic = titulo.includes('Cliente') ? (typeof ICON_CLIENTE_AZ!=='undefined'?ICON_CLIENTE_AZ:null)
+                : titulo.includes('Produto') ? (typeof ICON_PRODUTO_AZ!=='undefined'?ICON_PRODUTO_AZ:null) : null;
+      if(_ic) slide.addImage({data:_ic, x:x, y:y, w:0.24, h:0.24});
+      slide.addText(titulo, {x:x+(_ic?0.3:0), y:y, w:w-(_ic?0.3:0), h:0.3, fontSize:11, bold:true, color:corHeader, fontFace:'Open Sans'});
       if(items.length > 0){
         const rows = [[
           {text:'#', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'center', fontSize:8}},
@@ -11443,7 +11450,7 @@ async function exportPPTX(){
     // Quadrante 3 e 4 (bottom): Sell-out Redes e Produtos
     if(temSOSlide){
       renderQuadranteQueda(sTQ, 0.3, 4.05, 6.3, 2.7,
-        'SELL-OUT · Redes (ordenado por peso)', '1E40AF', quedaCliSOP, 'Sem redes em queda neste filtro');
+        'SELL-OUT · Clientes (ordenado por peso)', '1E40AF', quedaCliSOP, 'Sem clientes em queda neste filtro');
 
       renderQuadranteQueda(sTQ, 6.8, 4.05, 6.3, 2.7,
         'SELL-OUT · Produtos (ordenado por peso)', '1E40AF', quedaProdSOP, 'Sem produtos em queda neste filtro');
@@ -11469,7 +11476,7 @@ async function exportPPTX(){
     const totalQuedaAbs = quedaProds.reduce((s,p) => s + Math.abs(p.dAbs), 0);
 
     // ============ COLUNA ESQUERDA: SELL-IN ============
-    s9.addText('🏭 SELL-IN', {x:0.3, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
+    s9.addText('SELL-IN', {x:0.3, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
 
     if(quedaProds.length === 0){
       s9.addText('Sem produtos relevantes em queda neste filtro.', {
@@ -11489,7 +11496,7 @@ async function exportPPTX(){
         blocosTop3Q.push({text:`${idx+1}. ${p.nome}`, options:{fontSize:10, bold:true, color:'1f2937', breakLine:true}});
         blocosTop3Q.push({text:`-${fmt(Math.abs(p.dAbs))} (${p.dPct.toFixed(1)}%) · ${pesoPQ.toFixed(0)}% da queda`, options:{fontSize:9, color:VERMELHO, bold:true, breakLine:true}});
         clientesDoProd.forEach(c => {
-          blocosTop3Q.push({text:`   • ${c.nome}: -${fmt(Math.abs(c.dAbs))} (${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
+          blocosTop3Q.push({text:`• ${c.nome}: -${fmt(Math.abs(c.dAbs))} (${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
         });
       });
       s9.addText(blocosTop3Q, {x:0.3, y:1.2, w:6.3, h:3.6, fill:{color:'EFF6FF'}, valign:'top', margin:10, line:{color:AZUL, width:1}});
@@ -11509,7 +11516,7 @@ async function exportPPTX(){
     }
 
     // ============ COLUNA DIREITA: SELL-OUT ============
-    s9.addText(`🏪 SELL-OUT${labelSOPeriodo ? ' · ' + labelSOPeriodo : ''}`, {x:6.8, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
+    s9.addText(`SELL-OUT${labelSOPeriodo ? ' · ' + labelSOPeriodo : ''}`, {x:6.8, y:0.85, w:6.3, h:0.3, fontSize:13, bold:true, color:'003595', fontFace:'Open Sans'});
 
     if(!temSOSlide){
       s9.addText('Sell-out não disponível neste filtro.', {
@@ -11538,7 +11545,7 @@ async function exportPPTX(){
           blocosTop3SO.push({text:`${idx+1}. ${p.nome}`, options:{fontSize:10, bold:true, color:'1f2937', breakLine:true}});
           blocosTop3SO.push({text:`-${fmt(Math.abs(p.dAbs))} (${p.dPct.toFixed(1)}%) · ${pesoPSOQ.toFixed(0)}% da queda`, options:{fontSize:9, color:VERMELHO, bold:true, breakLine:true}});
           redesDoProd.forEach(c => {
-            blocosTop3SO.push({text:`   • ${c.nome}: -${fmt(Math.abs(c.dAbs))} (${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
+            blocosTop3SO.push({text:`• ${c.nome}: -${fmt(Math.abs(c.dAbs))} (${c.dPct.toFixed(1)}%)`, options:{fontSize:8, color:'334155', breakLine:true}});
           });
         });
         s9.addText(blocosTop3SO, {x:6.8, y:1.2, w:6.3, h:3.6, fill:{color:'F0F9FF'}, valign:'top', margin:10, line:{color:'1E40AF', width:1}});
@@ -11587,7 +11594,7 @@ async function exportPPTX(){
       if(prodsSystane.length > 0){
         const sSyst = pptx.addSlide();
         sSyst.background = {color: 'FFFFFF'};
-        sSyst.addText('📈 TENDÊNCIA POR SYSTANE · Últimos 12 meses', {
+        sSyst.addText('TENDÊNCIA POR SYSTANE · Últimos 12 meses', {
           x:0.3, y:0.3, w:12.7, h:0.5, fontSize:18, bold:true, color:AZUL, fontFace:'Open Sans'
         });
 
@@ -11763,8 +11770,8 @@ async function exportPPTX(){
       const labels = ultimos12D.map(p => `${MESES_NOME[p.mes-1]}/${String(p.ano).slice(-2)}`);
 
       sDiff.addChart(pptx.ChartType.line, [
-        { name: '🏭 Sell-in', labels: labels, values: siD },
-        { name: '🏪 Sell-out', labels: labels, values: soD }
+        { name: 'Sell-in', labels: labels, values: siD },
+        { name: 'Sell-out', labels: labels, values: soD }
       ], {
         x:0.5, y:1.3, w:12.3, h:5.5,
         chartColors: ['1E40AF', '059669'],
@@ -11783,7 +11790,7 @@ async function exportPPTX(){
       const tipoGap = gapTotal >= 0 ? 'SI > SO (estoque crescendo)' : 'SO > SI (demanda forte)';
       sDiff.addShape(pptx.ShapeType.rect, {x:0.3, y:6.95, w:12.7, h:0.4, fill:{color:'FEF3C7'}, line:{color:'D97706', width:1}});
       sDiff.addText([
-        {text:'💡 Gap total 12m: ', options:{fontSize:11, bold:true, color:'92400E'}},
+        {text:'Gap total 12m: ', options:{fontSize:11, bold:true, color:'92400E'}},
         {text:`${sinalGap}${fmt(Math.abs(gapTotal))}`, options:{fontSize:13, bold:true, color: gapTotal >= 0 ? VERMELHO : VERDE}},
         {text: ` · ${tipoGap}`, options:{fontSize:10, italic:true, color:'78350F'}}
       ], {x:0.5, y:6.99, w:12.5, h:0.32, valign:'middle'});
@@ -11798,8 +11805,8 @@ async function exportPPTX(){
         x:0.3, y:0.8, w:12.7, h:0.3, fontSize:11, italic:true, color:CINZA, fontFace:'Open Sans'
       });
       sDiffU.addChart(pptx.ChartType.line, [
-        { name: '🏭 Sell-in (un)', labels: labels, values: siDu },
-        { name: '🏪 Sell-out (un)', labels: labels, values: soDu }
+        { name: 'Sell-in (un)', labels: labels, values: siDu },
+        { name: 'Sell-out (un)', labels: labels, values: soDu }
       ], {
         x:0.5, y:1.3, w:12.3, h:5.5,
         chartColors: ['1E40AF', '059669'],
@@ -11811,7 +11818,7 @@ async function exportPPTX(){
       const tipoGapUn = gapUn >= 0 ? 'SI > SO (estoque crescendo)' : 'SO > SI (demanda forte)';
       sDiffU.addShape(pptx.ShapeType.rect, {x:0.3, y:6.95, w:12.7, h:0.4, fill:{color:'FEF3C7'}, line:{color:'D97706', width:1}});
       sDiffU.addText([
-        {text:'💡 Gap total 12m (un): ', options:{fontSize:11, bold:true, color:'92400E'}},
+        {text:'Gap total 12m (un): ', options:{fontSize:11, bold:true, color:'92400E'}},
         {text:`${gapUn>=0?'+':'-'}${fmt(Math.abs(gapUn))} un`, options:{fontSize:13, bold:true, color: gapUn >= 0 ? VERMELHO : VERDE}},
         {text: ` · ${tipoGapUn}`, options:{fontSize:10, italic:true, color:'78350F'}}
       ], {x:0.5, y:6.99, w:12.5, h:0.32, valign:'middle'});
@@ -11952,14 +11959,14 @@ async function exportPPTX(){
           // Actual + métrica explícita
           sTgt.addText([
             {text: fmt(c.real), options:{fontSize:24, bold:true, color:AZUL_ESCURO}},
-            {text: `  ${sufMetrica}`, options:{fontSize:12, color:CINZA}}
+            {text: `${sufMetrica}`, options:{fontSize:12, color:CINZA}}
           ], {x:xC+0.2, y:1.7, w:3.7, h:0.5, fontFace:'Open Sans'});
           sTgt.addText(`Target: ${c.tgt > 0 ? fmt(c.tgt) : '—'}`, {x:xC+0.2, y:2.25, w:3.7, h:0.3, fontSize:11, color:CINZA, fontFace:'Open Sans'});
           // vs Target + % PY lado a lado
           sTgt.addText([
             {text:`${c.gap.icon} ${c.gap.label}`, options:{bold:true, color:c.gap.cor}},
-            {text:`   vs Tgt`, options:{fontSize:9, color:CINZA}},
-            {text:`      ${c.py.label}`, options:{bold:true, color:c.py.cor}},
+            {text:`vs Tgt`, options:{fontSize:9, color:CINZA}},
+            {text:`${c.py.label}`, options:{bold:true, color:c.py.cor}},
             {text:` vs PY`, options:{fontSize:9, color:CINZA}}
           ], {x:xC+0.2, y:2.6, w:3.7, h:0.5, fontSize:15, fontFace:'Open Sans', valign:'middle'});
         });
@@ -12087,7 +12094,7 @@ async function exportPPTX(){
               const corNome = r.ehOutros ? CINZA : PRETO;
               const italNome = r.ehOutros ? true : false;
               rows.push([
-                {text:`  ${r.produto}`, options:{fontSize:11, color:corNome, italic:italNome}},
+                {text:`${r.produto}`, options:{fontSize:11, color:corNome, italic:italNome}},
                 {text:r.realMes?fmt(r.realMes):'—', options:{fontSize:11, color:PRETO, align:'center'}},
                 {text:r.tgtMes?fmt(r.tgtMes):'—', options:{fontSize:11, color:CINZA, align:'center'}},
                 pctCell(r.realMes, r.tgtMes),
@@ -12100,7 +12107,7 @@ async function exportPPTX(){
             });
             // Subtotal da franquia
             rows.push([
-              {text:`  ↳ Subtotal ${fr}`, options:{fontSize:11, color:AZUL_ESCURO, bold:true, fill:{color:'F1F5F9'}}},
+              {text:`↳ Subtotal ${fr}`, options:{fontSize:11, color:AZUL_ESCURO, bold:true, fill:{color:'F1F5F9'}}},
               {text:sRM?fmt(sRM):'—', options:{fontSize:11, bold:true, fill:{color:'F1F5F9'}, align:'center'}},
               {text:sTM?fmt(sTM):'—', options:{fontSize:11, bold:true, color:CINZA, fill:{color:'F1F5F9'}, align:'center'}},
               {...pctCell(sRM,sTM), options:{...pctCell(sRM,sTM).options, fill:{color:'F1F5F9'}, bold:true}},
@@ -12148,7 +12155,7 @@ async function exportPPTX(){
         }
 
         // Footer do slide 2
-        sTgt2.addText(`Ordem: positivos → quedas → sem target. ✅ ≥100% · ⚠️ 90-99% · 🚨 <90% · Métrica: ${mLabel}`, {
+        sTgt2.addText(`Ordem: positivos → quedas → sem target. ≥100% · 90-99% · <90% · Métrica: ${mLabel}`, {
           x:0.4, y:7.15, w:12.5, h:0.25, fontSize:8, italic:true, color:CINZA, fontFace:'Open Sans'
         });
       }
@@ -12276,12 +12283,12 @@ async function exportPPTX(){
             const gb = b.ytd25 ? b.ytd26/b.ytd25 : 0;
             return gb - ga;
           });
-          rows.push([{text:`🏷️ ${fr}`, options:{bold:true, color:AZUL, fill:{color:'EEF2FF'}, fontSize:11, colspan:5}}]);
+          rows.push([{text:`${fr}`, options:{bold:true, color:AZUL, fill:{color:'EEF2FF'}, fontSize:11, colspan:5}}]);
           let sFy24=0,sFy25=0,sYtd25=0,sYtd26=0,sTgtFY=0,sTgtYTD=0;
           linhas.forEach(l => {
             sFy24+=l.fy24; sFy25+=l.fy25; sYtd25+=l.ytd25; sYtd26+=l.ytd26; sTgtFY+=l.tgtFY; sTgtYTD+=l.tgtYTD;
             rows.push([
-              {text:`  ${l.produto}`, options:{fontSize:11, color: l.ehOutros?CINZA:PRETO, italic:l.ehOutros}},
+              {text:`${l.produto}`, options:{fontSize:11, color: l.ehOutros?CINZA:PRETO, italic:l.ehOutros}},
               pctCresc(l.fy25, l.fy24),
               l.ehOutros ? {text:'—', options:{fontSize:11, color:CINZA, align:'center'}} : pctCresc(l.tgtFY, l.fy25),
               l.ehOutros ? {text:'—', options:{fontSize:11, color:CINZA, align:'center'}} : pctCresc(l.tgtYTD, l.ytd25),
@@ -12290,7 +12297,7 @@ async function exportPPTX(){
           });
           // Subtotal franquia
           rows.push([
-            {text:`  ↳ Subtotal ${fr}`, options:{fontSize:11, bold:true, color:AZUL_ESCURO, fill:{color:'F1F5F9'}}},
+            {text:`↳ Subtotal ${fr}`, options:{fontSize:11, bold:true, color:AZUL_ESCURO, fill:{color:'F1F5F9'}}},
             {...pctCresc(sFy25,sFy24), options:{...pctCresc(sFy25,sFy24).options, fill:{color:'F1F5F9'}}},
             {...pctCresc(sTgtFY,sFy25), options:{...pctCresc(sTgtFY,sFy25).options, fill:{color:'F1F5F9'}}},
             {...pctCresc(sTgtYTD,sYtd25), options:{...pctCresc(sTgtYTD,sYtd25).options, fill:{color:'F1F5F9'}}},
@@ -12459,12 +12466,12 @@ async function exportPPTX(){
             const gb = b.ytdP ? b.ytdA/b.ytdP : 0;
             return gb - ga;
           });
-          rows.push([{text:`🏷️ ${fr}`, options:{bold:true, color:AZUL, fill:{color:'EEF2FF'}, fontSize:9, colspan:10}}]);
+          rows.push([{text:`${fr}`, options:{bold:true, color:AZUL, fill:{color:'EEF2FF'}, fontSize:9, colspan:10}}]);
           const S = {matA:0,matP:0,ytdA:0,ytdP:0,triA:0,triP:0};
           linhas.forEach(l => {
             ['matA','matP','ytdA','ytdP','triA','triP'].forEach(kk => S[kk]+=l[kk]);
             rows.push([
-              {text:`  ${l.produto}`, options:{fontSize:9, color: l.ehOutros?CINZA:PRETO, italic:l.ehOutros}},
+              {text:`${l.produto}`, options:{fontSize:9, color: l.ehOutros?CINZA:PRETO, italic:l.ehOutros}},
               numCell(l.matP, CINZA), numCell(l.matA), pctCrescSO(l.matA, l.matP),
               numCell(l.ytdP, CINZA), numCell(l.ytdA), pctCrescSO(l.ytdA, l.ytdP),
               numCell(l.triP, CINZA), numCell(l.triA), pctCrescSO(l.triA, l.triP)
@@ -12474,7 +12481,7 @@ async function exportPPTX(){
           const subCellsBg = (v,cor)=>({text:v?fmtUn(v):'—', options:{fontSize:9, bold:true, color:cor||PRETO, fill:{color:'F1F5F9'}, align:'center'}});
           const subPct = (a,b)=>({...pctCrescSO(a,b), options:{...pctCrescSO(a,b).options, fill:{color:'F1F5F9'}}});
           rows.push([
-            {text:`  ↳ Subtotal ${fr}`, options:{fontSize:9, bold:true, color:AZUL_ESCURO, fill:{color:'F1F5F9'}}},
+            {text:`↳ Subtotal ${fr}`, options:{fontSize:9, bold:true, color:AZUL_ESCURO, fill:{color:'F1F5F9'}}},
             subCellsBg(S.matP,CINZA), subCellsBg(S.matA), subPct(S.matA,S.matP),
             subCellsBg(S.ytdP,CINZA), subCellsBg(S.ytdA), subPct(S.ytdA,S.ytdP),
             subCellsBg(S.triP,CINZA), subCellsBg(S.triA), subPct(S.triA,S.triP)
@@ -12725,21 +12732,21 @@ async function exportPPTX(){
       }
 
       // SI×SO (lado direito)
-      sDiagG.addText('🔄 SI × SO · Saúde do Canal', {
+      sDiagG.addText('SI × SO · Saúde do Canal', {
         x:6.8, y:2.3, w:6.3, h:0.3, fontSize:12, bold:true, color:AZUL, fontFace:'Open Sans'
       });
       sDiagG.addShape(pptx.ShapeType.rect, {x:6.8, y:2.65, w:6.3, h:1.65, fill:{color:'F0F9FF'}, line:{color:'0EA5E9', width:1}});
       if(diag.soInfo){
         const so = diag.soInfo;
         const diagTxt = Math.abs(so.gap) > 5
-          ? (so.gap > 5 ? '⚠️ SI acima do SO · risco de estoque crescendo' : '⚠️ SO acima do SI · demanda forte (oportunidade)')
-          : '✅ SI e SO alinhados · canal saudável';
+          ? (so.gap > 5 ? 'SI acima do SO · risco de estoque crescendo' : 'SO acima do SI · demanda forte (oportunidade)')
+          : 'SI e SO alinhados · canal saudável';
         sDiagG.addText([
-          {text:'🏭 Sell-in: ', options:{fontSize:11, bold:true, color:'003595'}},
+          {text:'Sell-in: ', options:{fontSize:11, bold:true, color:'003595'}},
           {text:`${diag.varPct>=0?'+':''}${diag.varPct.toFixed(1)}%\n`, options:{fontSize:12, bold:true, color: diag.varPct>=0?VERDE:VERMELHO}},
-          {text:'🏪 Sell-out: ', options:{fontSize:11, bold:true, color:'003595'}},
+          {text:'Sell-out: ', options:{fontSize:11, bold:true, color:'003595'}},
           {text:`${so.soVar>=0?'+':''}${so.soVar.toFixed(1)}%\n`, options:{fontSize:12, bold:true, color: so.soVar>=0?VERDE:VERMELHO}},
-          {text:'⚖️ Gap: ', options:{fontSize:11, bold:true, color:'003595'}},
+          {text:'⚖ Gap: ', options:{fontSize:11, bold:true, color:'003595'}},
           {text:`${so.gap>=0?'+':''}${so.gap.toFixed(1)}pp\n\n`, options:{fontSize:12, bold:true, color: Math.abs(so.gap)>5?LARANJA:VERDE}},
           {text:diagTxt, options:{fontSize:10, italic:true, color:PRETO}},
         ], {x:7.0, y:2.75, w:6.0, h:1.45, valign:'top', paraSpaceAfter:2});
@@ -12762,7 +12769,7 @@ async function exportPPTX(){
           sDiagG.addText(`-${fmt(Math.abs(p.dAbs))}`, {x:4.6, y:y+0.05, w:1.9, h:0.4, fontSize:11, bold:true, color:VERMELHO, fontFace:'Open Sans', valign:'middle', align:'right'});
         });
       } else {
-        sDiagG.addText('Sem produtos em queda significativa neste grupo. ✅', {
+        sDiagG.addText('Sem produtos em queda significativa neste grupo. ', {
           x:0.3, y:4.9, w:6.3, h:0.3, fontSize:10, italic:true, color:VERDE, fontFace:'Open Sans'
         });
       }
@@ -12782,7 +12789,7 @@ async function exportPPTX(){
           sDiagG.addText(`-${fmt(Math.abs(c.dAbs))}`, {x:11.1, y:y+0.05, w:1.9, h:0.4, fontSize:11, bold:true, color:VERMELHO, fontFace:'Open Sans', valign:'middle', align:'right'});
         });
       } else {
-        sDiagG.addText('Sem clientes em queda significativa neste grupo. ✅', {
+        sDiagG.addText('Sem clientes em queda significativa neste grupo. ', {
           x:6.8, y:4.9, w:6.3, h:0.3, fontSize:10, italic:true, color:VERDE, fontFace:'Open Sans'
         });
       }
@@ -12840,7 +12847,7 @@ async function exportPPTX(){
       sPlanoG.addText([
         {text:'💰 Impacto estimado das ações dinâmicas: ', options:{fontSize:12, bold:true, color:PRETO}},
         {text:`+${fmt(totalImpacto)} ${mLabelG}`, options:{fontSize:16, bold:true, color:VERDE}},
-        {text:'   ·   Demais ações marcadas como ', options:{fontSize:10, color:CINZA}},
+        {text:'·   Demais ações marcadas como ', options:{fontSize:10, color:CINZA}},
         {text:'"estimar"', options:{fontSize:10, italic:true, color:LARANJA}},
         {text:' = a validar com KAM responsável', options:{fontSize:10, italic:true, color:CINZA}},
       ], {x:0.5, y:yBoxImpacto+0.05, w:12.3, h:0.5, valign:'middle'});
@@ -12848,7 +12855,7 @@ async function exportPPTX(){
       // Caveat metodológico (importante para gerentes!)
       const yCaveat = yBoxImpacto + 0.8;
       sPlanoG.addShape(pptx.ShapeType.rect, {x:0.3, y:yCaveat, w:12.7, h:0.95, fill:{color:'FFFBEB'}, line:{color:LARANJA, width:1}});
-      sPlanoG.addText('⚠️ Como interpretar este plano', {x:0.5, y:yCaveat+0.05, w:12.3, h:0.25, fontSize:11, bold:true, color:'92400E', fontFace:'Open Sans'});
+      sPlanoG.addText('Como interpretar este plano', {x:0.5, y:yCaveat+0.05, w:12.3, h:0.25, fontSize:11, bold:true, color:'92400E', fontFace:'Open Sans'});
       sPlanoG.addText([
         {text:'• ', options:{bold:true, color:LARANJA}},
         {text:'Ações com nome de produto/cliente específico foram derivadas dos top ofensores reais do período.\n', options:{fontSize:9, color:PRETO}},
