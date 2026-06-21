@@ -8936,6 +8936,17 @@ async function exportOnePager(){
       x:0.3, y:7.55, w:11.1, h:0.2, fontSize:7.5, color:CINZA, italic:true, align:'center', fontFace:'Open Sans'
     });
 
+    // Correção caminho gráficos absoluto → relativo (anti-corrupção PowerPoint)
+    try {
+      pptx._slides.forEach(sl => {
+        (sl._relsChart || []).forEach(rc => {
+          if(rc.Target && rc.Target.indexOf('/ppt/charts/') === 0){
+            rc.Target = rc.Target.replace('/ppt/charts/', '../charts/');
+          }
+        });
+      });
+    } catch(eRel){ console.warn('Ajuste de caminho de gráfico falhou', eRel); }
+
     // Download
     const ts = new Date().toISOString().slice(0,16).replace('T','_').replace(':','-');
     await pptx.writeFile({fileName: `Alcon_OnePager_${ts}.pptx`});
@@ -11826,7 +11837,7 @@ async function exportPPTX(){
         };
         // (1) métrica selecionada
         gerarSlideSystane(getValor, getValorSO, fmt, METRICAS[metricaAtual].label);
-        // (2) versão em UNIDADES (sempre, exceto se a métrica já for unidades)
+        // (2) versão em UNIDADES (exceto se a métrica já for unidades)
         if(metricaAtual !== 'UNID'){
           const vUnid = (r) => (+r[COLS.VALOR_UNID] || 0);
           const vUnidSO = (r) => (+r.VALOR_UNID || +r.UNID || +r.UNIDADES || 0);
@@ -13206,6 +13217,20 @@ async function exportPPTX(){
         novaOrdem.forEach(sl => pptx._slides.push(sl));
       }
     } catch(e){ console.warn('Reorder falhou, mantendo ordem original', e); }
+
+    // ===== CORREÇÃO CRÍTICA: caminho dos gráficos absoluto → relativo =====
+    // O PptxGenJS gera o Target dos gráficos como "/ppt/charts/..." (absoluto),
+    // e o PowerPoint RECUSA caminhos absolutos em relationships (erro "repair").
+    // Convertemos para "../charts/..." (relativo), como já é feito com imagens.
+    try {
+      pptx._slides.forEach(sl => {
+        (sl._relsChart || []).forEach(rc => {
+          if(rc.Target && rc.Target.indexOf('/ppt/charts/') === 0){
+            rc.Target = rc.Target.replace('/ppt/charts/', '../charts/');
+          }
+        });
+      });
+    } catch(eRel){ console.warn('Ajuste de caminho de gráfico falhou', eRel); }
 
     // Salvar
     const sufixoCliente = clienteSelecionado ? `_${clienteSelecionado.substring(0,20).replace(/[^\w]/g,'_')}` : '';

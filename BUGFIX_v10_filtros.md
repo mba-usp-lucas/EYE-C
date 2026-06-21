@@ -1,41 +1,40 @@
-# v10 - VERSÃO ESTÁVEL (reordenação desativada)
+# v10 - CORREÇÃO DEFINITIVA: caminho dos gráficos (causa raiz do "repair")
 
-## ✅ O que foi feito
-A reordenação automática dos slides (que reorganizava na "ordem executiva")
-foi DESATIVADA. Ela manipulava o array interno de slides do PptxGenJS, o que
-deixava as referências internas (rIds) fora de ordem sequencial. Apesar de
-ser tecnicamente válido (e o python-pptx/LibreOffice aceitarem), o PowerPoint
-recusava o arquivo ("repair").
+## 🎯 CAUSA RAIZ REAL (confirmada no código do PptxGenJS)
+O PptxGenJS gera o caminho (Target) dos GRÁFICOS como ABSOLUTO:
+    Target="/ppt/charts/chart1.xml"
+enquanto imagens usam caminho RELATIVO (../media/...). O PowerPoint RECUSA
+caminhos absolutos em relationships e pede reparo ("repair / não consegue ler").
+O python-pptx e o LibreOffice toleram — por isso só o PowerPoint acusava.
 
-Agora os slides saem na ORDEM DE CRIAÇÃO (rIds sequenciais), que é o
-comportamento estável — como na versão que abria sem erro.
+Como todo slide com gráfico nativo (Systane, Diferença SI×SO, Movers) tinha
+esse caminho absoluto, qualquer um desses bastava para corromper o arquivo.
 
-## ✅ Proteções mantidas (não atrapalham, só ajudam)
-- Sanitização de caracteres XML inválidos (controle \x00/\x07/\x1F etc.)
-- Bloqueio de imagens de 0 bytes (canvas não renderizado)
+## ✅ Correção
+Antes de salvar, percorremos todos os slides e trocamos o caminho dos
+gráficos de "/ppt/charts/..." para "../charts/..." (relativo). Aplicado nos
+dois exports (principal e One-Pager).
 
-## ✅ Conteúdo mantido (são operações padrão e seguras)
-- Systane em Reais e Unidades
-- Slide Produtos Acima/Abaixo do Target
-- Faixas/ícones, Rede→Cliente, Insight limpo, Targets %PY, etc.
+## ✅ Como foi validado (rigoroso)
+- Inspeção do código-fonte do PptxGenJS: confirmado Target absoluto (linha 1910)
+- Export REAL executado com sell-out → gráficos Systane de 2 séries
+- Resultado: 6 gráficos, TODOS com caminho relativo, 0 caminhos absolutos
+- Validação exaustiva do pacote: XMLs bem-formados, todos os rels resolvem,
+  content-types completo, python-pptx lê sem erro
 
-## Ordem atual dos slides (criação)
-Capa · Indicadores · Tipo de Cliente · Resumo (Key Accounts) ·
-Comparativa SI×SO · Insight · Plano de Ação · Evolução Mensal (SI e SO) ·
-Status Targets FOCO · Mix Franquia · Franquia comparativo ·
-Top 15 Clientes · Top 15 Produtos (Rede) · Top 15 Produtos (Distribuidor) ·
-Top 15 Crescimentos · Diagnóstico Crescimento · Top 15 Quedas ·
-Diagnóstico Queda · Systane (Reais) · Systane (Unidades) ·
-Diferença 12m (valor) · Diferença 12m (unidades) · Movers ·
-Targets Financeiros · Detalhe por Franquia · Acima/Abaixo Target ·
-Crescimento por Produto (SI e SO) · Plano de Recuperação · Agenda
+## ✅ Recursos reativados (não eram a causa)
+- Systane em Unidades (Tendência por Systane · Unidades)
 
-OBS: a Agenda fica por último (era reposicionada pela reordenação).
-Se quiser a "ordem executiva" de volta, dá para fazer de forma segura
-reordenando a SEQUÊNCIA DE CRIAÇÃO no código (sem mexer no array interno) —
-mas só depois de confirmar que este arquivo abre normal no PowerPoint.
+## Estado atual
+- Reordenação: DESATIVADA (mantém ordem de criação, rIds sequenciais)
+- Systane: Reais + Unidades
+- Proteções: sanitização XML + bloqueio de imagens 0 bytes + caminho relativo
 
-## ✅ Validação
-- Export REAL executado com dados problemáticos: arquivo íntegro
-- rIds sequenciais (ordem natural que o PowerPoint aceita)
-- python-pptx: lê sem erro
+## Resumo de TODAS as causas de "repair" encontradas e corrigidas
+1. Imagens de 0 bytes (canvas vazio) → helper addCanvasImg
+2. Caracteres XML inválidos nos dados → sanitização addText/Table/Chart
+3. Caminho ABSOLUTO dos gráficos → conversão para relativo  ← a definitiva
+
+## ✅ Validações
+- Sintaxe JS OK (4 scripts)
+- Export real com gráficos: pacote 100% válido, caminhos relativos
