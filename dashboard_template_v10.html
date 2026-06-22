@@ -8549,7 +8549,7 @@ async function exportOnePager(){
       pptx.addSlide = function(...args){
         const sl = _origAddSlide(...args);
         const _at = sl.addText.bind(sl); sl.addText = (t,o) => _at(_xsDeep(t), o);
-        const _atb = sl.addTable.bind(sl); sl.addTable = (r,o) => _atb(_xsDeep(r), o);
+        const _atb = sl.addTable.bind(sl); sl.addTable = (r,o) => _atb(_xsDeep(r), Object.assign({}, o, {autoPage:false}));
         const _ac = sl.addChart.bind(sl); sl.addChart = (ty,d,o) => _ac(ty, _xsDeep(d), o);
         const _ai = sl.addImage.bind(sl); sl.addImage = (o) => { if(_imgValida(o)) return _ai(o); return sl; };
         return sl;
@@ -9218,7 +9218,7 @@ async function exportPPTX(){
       const _at = sl.addText.bind(sl);
       sl.addText = (txt, opts) => _at(_xsDeep(txt), opts);
       const _atb = sl.addTable.bind(sl);
-      sl.addTable = (rows, opts) => _atb(_xsDeep(rows), opts);
+      sl.addTable = (rows, opts) => _atb(_xsDeep(rows), Object.assign({}, opts, {autoPage:false}));
       const _ac = sl.addChart.bind(sl);
       sl.addChart = (type, data, opts) => _ac(type, _xsDeep(data), opts);
       // addImage: ignora imagens vazias/inválidas (evita PNG de 0 bytes → repair)
@@ -9723,28 +9723,31 @@ async function exportPPTX(){
           ], {x:x+0.15, y:1.1, w:3.8, h:0.8, valign:'middle'});
         });
 
-        // Tabela detalhada SI × SO
+        // Tabela detalhada SI × SO — altura/fonte adaptativas ao nº de tipos
+        const nTipos = linhasTC.length;
+        const tblRowH = nTipos > 9 ? 0.30 : (nTipos > 6 ? 0.38 : 0.5);
+        const tblFont = nTipos > 9 ? 9 : (nTipos > 6 ? 10 : 11);
         const rowsTC = [[
-          {text:'Tipo de Cliente', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:11}},
-          {text:'SI Atual', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:11, align:'right'}},
-          {text:'SI Δ% YoY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:11, align:'right'}},
-          {text:'SO Δ% YoY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:11, align:'right'}},
-          {text:'Gap SI-SO', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:11, align:'right'}}
+          {text:'Tipo de Cliente', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:tblFont}},
+          {text:'SI Atual', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:tblFont, align:'right'}},
+          {text:'SI Δ% YoY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:tblFont, align:'right'}},
+          {text:'SO Δ% YoY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:tblFont, align:'right'}},
+          {text:'Gap SI-SO', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:tblFont, align:'right'}}
         ]];
         linhasTC.forEach(l => {
           const corSI = l.siVar>=0?'059669':'DC2626';
           const corSO = l.soVar>=0?'059669':'DC2626';
           rowsTC.push([
-            {text:`${l.tipo}`, options:{bold:true, fontSize:11, color:'1E3A5F'}},
-            {text:fmt(l.siAtual), options:{align:'right', fontSize:11}},
-            {text:`${l.siVar>=0?'▲ +':'▼ '}${l.siVar.toFixed(1)}%`, options:{align:'right', bold:true, color:corSI, fontSize:11}},
-            {text: l.temSO?`${l.soVar>=0?'▲ +':'▼ '}${l.soVar.toFixed(1)}%`:'n/d', options:{align:'right', bold:true, color: l.temSO?corSO:'94A3B8', fontSize:11}},
-            {text: (l.temSO && l.gap!==null)?`${l.gap>=0?'+':''}${l.gap.toFixed(1)}pp`:'n/d', options:{align:'right', color: (l.temSO&&Math.abs(l.gap)>5)?'D97706':'64748B', fontSize:11}}
+            {text:`${l.tipo}`, options:{bold:true, fontSize:tblFont, color:'1E3A5F'}},
+            {text:fmt(l.siAtual), options:{align:'right', fontSize:tblFont}},
+            {text:`${l.siVar>=0?'▲ +':'▼ '}${l.siVar.toFixed(1)}%`, options:{align:'right', bold:true, color:corSI, fontSize:tblFont}},
+            {text: l.temSO?`${l.soVar>=0?'▲ +':'▼ '}${l.soVar.toFixed(1)}%`:'n/d', options:{align:'right', bold:true, color: l.temSO?corSO:'94A3B8', fontSize:tblFont}},
+            {text: (l.temSO && l.gap!==null)?`${l.gap>=0?'+':''}${l.gap.toFixed(1)}pp`:'n/d', options:{align:'right', color: (l.temSO&&Math.abs(l.gap)>5)?'D97706':'64748B', fontSize:tblFont}}
           ]);
         });
         sTC.addTable(rowsTC, {
-          x:0.5, y:2.4, w:12.3, colW:[3.5, 2.2, 2.2, 2.2, 2.2],
-          border:{type:'solid', pt:0.5, color:'E5E7EB'}, rowH:0.5, valign:'middle'
+          x:0.5, y:2.25, w:12.3, colW:[3.5, 2.2, 2.2, 2.2, 2.2],
+          border:{type:'solid', pt:0.5, color:'E5E7EB'}, rowH:tblRowH, valign:'middle', autoPage:false
         });
 
         sTC.addText('Agrupado por TIPO_CLIENTE (Rede / Distribuidor). Δ% YoY = variação vs mesmo período do ano anterior. Gap SI-SO > 5pp = descompasso (estoque crescendo ou demanda em ajuste).', {
@@ -11362,8 +11365,8 @@ async function exportPPTX(){
         const rows = [[
           {text:'#', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'center', fontSize:8}},
           {text:'Nome', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:8}},
-          {text:'Atual', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}},
-          {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}}
+          {text:'Atual SI', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}},
+          {text:'Δ % PY', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}}
         ]];
         items.slice(0, 12).forEach((r,i) => {
           rows.push([
@@ -11373,7 +11376,7 @@ async function exportPPTX(){
             {text:`+${r.dPct.toFixed(1)}%`, options:{fill:{color:BRANCO}, align:'right', bold:true, color:VERDE, fontSize:8}}
           ]);
         });
-        slide.addTable(rows, {x:x, y:y+0.32, w:w, h:h-0.32, colW:[0.3, w-1.7, 0.7, 0.7], fontSize:8, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
+        slide.addTable(rows, {x:x, y:y+0.32, w:w, h:h-0.32, colW:[0.45, w-2.05, 0.9, 0.7], fontSize:8, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
       } else {
         slide.addText(vazioMsg, {x:x, y:y+0.4, w:w, h:0.4, fontSize:10, italic:true, color:CINZA, fill:{color:'F8FAFC'}, valign:'middle', margin:8});
       }
@@ -11550,7 +11553,7 @@ async function exportPPTX(){
         const rows = [[
           {text:'#', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'center', fontSize:8}},
           {text:'Nome', options:{bold:true, color:BRANCO, fill:{color:corHeader}, fontSize:8}},
-          {text:'Δ Abs', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}},
+          {text:'Δ Abs PY', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}},
           {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}},
           {text:'Peso', options:{bold:true, color:BRANCO, fill:{color:corHeader}, align:'right', fontSize:8}}
         ]];
@@ -11563,7 +11566,7 @@ async function exportPPTX(){
             {text:`${r.peso.toFixed(1)}%`, options:{fill:{color:BRANCO}, align:'right', bold:true, color:'003595', fontSize:8}}
           ]);
         });
-        slide.addTable(rows, {x:x, y:y+0.32, w:w, h:h-0.32, colW:[0.3, w-2.5, 0.7, 0.7, 0.8], fontSize:8, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
+        slide.addTable(rows, {x:x, y:y+0.32, w:w, h:h-0.32, colW:[0.45, w-2.75, 0.85, 0.65, 0.8], fontSize:8, border:{type:'solid', pt:0.5, color:'E5E7EB'}});
       } else {
         slide.addText(vazioMsg, {x:x, y:y+0.4, w:w, h:0.4, fontSize:10, italic:true, color:VERDE, fill:{color:'D1FAE5'}, valign:'middle', margin:8});
       }
@@ -11871,14 +11874,14 @@ async function exportPPTX(){
           });
         }
         };
-        // (1) métrica selecionada
-        gerarSlideSystane(getValor, getValorSO, fmt, METRICAS[metricaAtual].label);
-        // (2) versão em UNIDADES (exceto se a métrica já for unidades)
-        if(metricaAtual !== 'UNID'){
-          const vUnid = (r) => (+r[COLS.VALOR_UNID] || 0);
-          const vUnidSO = (r) => (+r.VALOR_UNID || +r.UNID || +r.UNIDADES || 0);
-          gerarSlideSystane(vUnid, vUnidSO, fmtNumR, 'Unidades');
-        }
+        // (1) versão em UNIDADES
+        const vUnid = (r) => (+r[COLS.VALOR_UNID] || 0);
+        const vUnidSO = (r) => (+r.VALOR_UNID || +r.UNID || +r.UNIDADES || 0);
+        gerarSlideSystane(vUnid, vUnidSO, fmtNumR, 'Unidades');
+        // (2) versão em REAIS (sell-in) — na sequência do unidades
+        const vBRL = (r) => (+r[COLS.VALOR_BRL] || 0);
+        const vBRLSO = (r) => (+r.BRL || +r.VALOR_BRL || 0);
+        gerarSlideSystane(vBRL, vBRLSO, fmt, 'Reais');
       }
     }
 
@@ -12141,6 +12144,53 @@ async function exportPPTX(){
             {text:` vs PY`, options:{fontSize:9, color:CINZA}}
           ], {x:xC+0.2, y:2.6, w:3.7, h:0.5, fontSize:15, fontFace:'Open Sans', valign:'middle'});
         });
+
+        // ===== Tabela DE&OH (atingimento por produto) no espaço abaixo dos cards =====
+        const _isDEOH = (fr) => { const u=String(fr||'').toUpperCase().replace(/\s/g,''); return u.includes('DE&OH')||u.includes('DEOH'); };
+        const frProdTg = {};
+        targetsF.forEach(t => { if(t.PRODUTO && t.FRANQUIA) frProdTg[t.PRODUTO] = t.FRANQUIA; });
+        for(const r of base){ const p=r[COLS.PRODUTO]; if(p && !frProdTg[p] && r[COLS.FRANQUIA]) frProdTg[p]=r[COLS.FRANQUIA]; }
+        const prodsDEOH = [...new Set([...targetsF.map(t=>t.PRODUTO), ...base.map(r=>r[COLS.PRODUTO])])].filter(p => p && _isDEOH(frProdTg[p]));
+        const linhasDEOH = prodsDEOH.map(prod => {
+          const realMes = base.filter(r=>r[COLS.PRODUTO]===prod && r[COLS.ANO]===anoAtualT && r[COLS.MES_NUM]===mesAtualT).reduce((s,r)=>s+getValor(r),0);
+          const realYTD = base.filter(r=>r[COLS.PRODUTO]===prod && r[COLS.ANO]===anoAtualT && r[COLS.MES_NUM]<=mesAtualT).reduce((s,r)=>s+getValor(r),0);
+          const tgtMesP = targetsF.filter(t=>t.PRODUTO===prod && +t.ANO===anoAtualT && +t.MES_NUM===mesAtualT).reduce((s,t)=>s+(+t[campoTgt]||0),0);
+          const tgtYTDP = targetsF.filter(t=>t.PRODUTO===prod && +t.ANO===anoAtualT && +t.MES_NUM<=mesAtualT).reduce((s,t)=>s+(+t[campoTgt]||0),0);
+          return {prod, realMes, tgtMes:tgtMesP, realYTD, tgtYTD:tgtYTDP};
+        }).filter(l => l.tgtYTD>0 || l.tgtMes>0 || l.realYTD>0).sort((a,b)=>b.realYTD-a.realYTD);
+
+        if(linhasDEOH.length > 0){
+          const nLD = linhasDEOH.length;
+          const fS = nLD>8 ? 8 : 9;
+          const rH = nLD>8 ? 0.255 : 0.30;
+          sTgt.addText('Detalhe DE&OH · Atingimento por produto', {x:0.4, y:3.82, w:12.5, h:0.3, fontSize:13, bold:true, color:AZUL, fontFace:'Open Sans'});
+          const atgCell = (real,tgt) => {
+            if(!tgt) return {text:'—', options:{align:'center', color:CINZA, fontSize:fS}};
+            const gap=(real/tgt*100)-100; const cor=gap>=0?VERDE:(gap>=-10?LARANJA:VERMELHO);
+            return {text:`${gap>=0?'▲ +':'▼ '}${gap.toFixed(0)}%`, options:{align:'center', color:cor, bold:true, fontSize:fS}};
+          };
+          const rowsD = [[
+            {text:'Produto DE&OH', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS}},
+            {text:'Real Mês', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'right'}},
+            {text:'Tgt Mês', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'right'}},
+            {text:'Atg Mês', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'center'}},
+            {text:'Real YTD', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'right'}},
+            {text:'Tgt YTD', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'right'}},
+            {text:'Atg YTD', options:{bold:true,color:BRANCO,fill:{color:'0F2744'},fontSize:fS,align:'center'}}
+          ]];
+          linhasDEOH.slice(0,9).forEach(l => {
+            rowsD.push([
+              {text:l.prod, options:{fontSize:fS, bold:true, color:'1E3A5F'}},
+              {text:fmt(l.realMes), options:{align:'right', fontSize:fS}},
+              {text:l.tgtMes?fmt(l.tgtMes):'—', options:{align:'right', fontSize:fS, color:CINZA}},
+              atgCell(l.realMes,l.tgtMes),
+              {text:fmt(l.realYTD), options:{align:'right', fontSize:fS}},
+              {text:l.tgtYTD?fmt(l.tgtYTD):'—', options:{align:'right', fontSize:fS, color:CINZA}},
+              atgCell(l.realYTD,l.tgtYTD)
+            ]);
+          });
+          sTgt.addTable(rowsD, {x:0.4, y:4.18, w:12.5, colW:[3.5,1.6,1.6,1.4,1.6,1.6,1.4], rowH:rH, fontSize:fS, valign:'middle', border:{type:'solid',pt:0.5,color:'E5E7EB'}, autoPage:false});
+        }
 
         // Rodapé do slide 1 (resumo)
         sTgt.addText(`Métrica: ${mLabel} · Mês = ${MESES_NOME[mesAtualT-1]}/${anoAtualT} · YTD = Jan→${MESES_NOME[mesAtualT-1]} · Filtros: ${franquiasSelecionadas.length ? franquiasSelecionadas.join(', ') : 'todas franquias'}`, {

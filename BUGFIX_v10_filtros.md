@@ -1,34 +1,23 @@
-# v10.2 - Insight refeito (visual) + Agenda como índice (slide 2)
+# v10.3 - 6 ajustes solicitados
 
-## Insight Rápido — visual novo (por franquia, como pedido)
-Antes: um "paredão" de texto numa caixa única.
-Agora, em cada slide de Insight (mantidos por grupo de franquia):
-- FAIXA "GERAL CONSOLIDADO" no topo: variação grande e colorida (verde/vermelho)
-  + 4 chips de métrica (Unidades, Faturamento, Sell-out, Top 5 Clientes).
-- CADA FRANQUIA vira um CARTÃO: barra de status colorida, nome + variação no
-  cabeçalho, e abaixo Driver / SI×SO / Top produtos. Layout em 2 colunas quando
-  há 4+ franquias, 1 coluna quando há menos.
-- Emoji 🌍 removido.
-
-## Agenda — agora é o SLIDE 2 (índice das seções)
-- Criada logo após a capa (posição 2), em cartões numerados em 2 colunas.
-- Lista as 16 seções do relatório.
-- Como é criada na ordem certa (não via reorder), os rIds ficam sequenciais
-  e o PowerPoint aceita.
+1. SYSTANE: agora gera Tendência em UNIDADES e, em sequência, em REAIS (sell-in).
+2. TARGETS FINANCEIROS (slide do "card gigante"): o espaço vazio abaixo dos 3
+   cards agora traz a tabela DE&OH (atingimento por produto: Real/Tgt/Atg de
+   Mês e YTD). O slide de detalhe por franquia continua existindo.
+3. SLIDES SEM BANNER/TÍTULO: eram slides-fantasma criados pelo autoPage do
+   PptxGenJS quando uma tabela passava do fim da página. Agora TODAS as tabelas
+   têm autoPage:false → nenhum slide extra sem cabeçalho.
+4. TOP 15 QUEDAS/CRESCIMENTOS: coluna "Δ Abs" renomeada para "Δ Abs PY".
+5. SLIDE 17 (Top 15 Crescimentos): colunas "Atual"→"Atual SI" e "Δ %"→"Δ % PY".
+   Coluna "#" alargada (não quebra mais com números de 2 dígitos).
+6. SLIDE 4 (Tipo de Cliente): tabela com altura/fonte adaptativas ao nº de
+   tipos — com muitos tipos (ex.: 12) a tabela compacta e cabe na tela.
 
 ## Correções de corrupção (mantidas)
-- Caminho dos gráficos absoluto → relativo (causa raiz do "repair")
-- addImage bloqueia imagens vazias (0 bytes)
-- Sanitização de caracteres XML inválidos
-- Marcador "v10.2" no rodapé (confirma que é a versão nova)
+- Caminho dos gráficos relativo · addImage bloqueia imagem vazia ·
+  sanitização XML · autoPage:false (também evita corrupção por tabela órfã)
+- Marcador "v10.2/3" no rodapé
 
-## Validação
-- Export real com sell-out → 41 slides
-- 0 caminhos absolutos, 0 imagens de 0 bytes
-- Slide 2 = Agenda; Insights com cartões por franquia
-- Render conferido (Agenda e Insight)
-
-## Para usar
-1. Substitua o dashboard_template_v10.html
-2. RE-RODE o sales_dashboard_v10.py
-3. Abra o dashboard novo (Ctrl+Shift+R) e exporte
+## Validação (com dados de target + sell-out)
+- 44 slides · 0 caminhos absolutos · 0 imagens 0-byte · nenhum slide sem banner
+- "Atual SI" e "Δ Abs PY" confirmados · Systane Unidades→Reais · DE&OH no sTgt
