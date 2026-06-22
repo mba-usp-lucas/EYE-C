@@ -10536,6 +10536,8 @@ async function exportPPTX(){
       });
 
       // ===== RENDER =====
+      // ===== RENDER (robusto: try/catch nunca deixa o slide em branco) =====
+      try {
       let yCursor = 0.95;
       // --- Faixa GERAL ---
       if(geral){
@@ -10570,7 +10572,6 @@ async function exportPPTX(){
         const gap = 0.16;
         const cardW = cols===2 ? (12.53 - gap)/2 : 12.53;
         const cardH = Math.min(3.4, (dispH - gap*(rows-1)) / rows);
-        // Quanto maior o cartão, mais detalhes e fonte maior
         const maxDet = cardH > 2.6 ? 7 : (cardH > 1.9 ? 6 : (cardH > 1.2 ? 3 : 2));
         const detFont = cardH > 2.6 ? 11 : (cardH > 1.9 ? 10.5 : 9.5);
         franquiaBlocks.forEach((fb, i) => {
@@ -10580,22 +10581,33 @@ async function exportPPTX(){
           const y = yStart + row * (cardH + gap);
           s.addShape('roundRect', {x, y, w:cardW, h:cardH, fill:{color:'FFFFFF'}, line:{color:'D6E2EF',width:1}, rectRadius:0.05});
           s.addShape('rect', {x, y, w:0.1, h:cardH, fill:{color:fb.cor}});
-          s.addText([
-            {text:fb.nome, options:{bold:true, color:AZUL, fontSize:13}},
-            {text:`    ${fb.resumo}`, options:{bold:true, color:fb.cor, fontSize:11.5}},
-          ], {x:x+0.24, y:y+0.10, w:cardW-0.4, h:0.34, valign:'middle'});
+          s.addText(`${fb.nome}    ${fb.resumo}`, {x:x+0.24, y:y+0.10, w:cardW-0.4, h:0.34, valign:'middle', bold:true, color:AZUL, fontSize:13});
           const detalhesShow = fb.detalhes.slice(0, maxDet);
           if(detalhesShow.length){
-            const detRuns = detalhesShow.map(t => ({text:t, options:{bullet:{indent:0.12}, fontSize:detFont, color:'1E3A5F', paraSpaceAfter:5, breakLine:true}}));
-            s.addText(detRuns, {x:x+0.30, y:y+0.50, w:cardW-0.52, h:cardH-0.60, valign:'top'});
+            // string simples (mais robusta que runs com bullet/breakLine)
+            const detStr = detalhesShow.map(t => '•  ' + t).join('\n');
+            s.addText(detStr, {x:x+0.30, y:y+0.50, w:cardW-0.52, h:cardH-0.60, fontSize:detFont, color:'1E3A5F', valign:'top', lineSpacingMultiple:1.12, paraSpaceAfter:3});
           }
         });
       }
-
       // rodapé contextual
       s.addText(`${tituloSlide} · impacto em Sell-in (SI) vs ano anterior (PY) · ${per.labelAtual} vs ${per.labelComp || 'YA'} · ${mLabel}`, {
         x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T, fontFace:'Open Sans'
       });
+      } catch(eRender){
+        // FALLBACK: render simples em texto — garante que o insight nunca fica em branco
+        try {
+          const fbTxt = [];
+          if(geral) fbTxt.push(`GERAL: ${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}% · Impacto em Sell-in (SI) vs PY (${fmt(geral.valA)})`);
+          franquiaBlocks.forEach(fb => {
+            fbTxt.push('');
+            fbTxt.push(`${fb.nome}  ${fb.resumo}`);
+            fb.detalhes.slice(0,6).forEach(d => fbTxt.push('   • ' + d));
+          });
+          s.addText(fbTxt.join('\n'), {x:0.4, y:0.95, w:12.5, h:6.0, fill:{color:'F8FBFE'}, valign:'top', margin:14, line:{color:AZUL, width:1}, fontSize:11, color:'1E3A5F'});
+          s.addText(`${tituloSlide} · impacto em Sell-in (SI) vs ano anterior (PY)`, {x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T});
+        } catch(e2){}
+      }
     }
 
     // Detectar franquias disponíveis
