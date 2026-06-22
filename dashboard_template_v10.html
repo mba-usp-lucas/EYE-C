@@ -9290,7 +9290,7 @@ async function exportPPTX(){
       slide.addText([
         {text:'Business Use Only', options:{bold:true, color:'5B6B7E'}},
         {text:'·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}},
-        {text:'   · v10.2', options:{color:'C7D2DE'}}
+        {text:'   · v10.8 insight-fix', options:{color:'C7D2DE'}}
       ], {
         x:4.6, y:7.12, w:8.43, h:0.3,
         fontSize:9, fontFace:'Arial', align:'right'
@@ -10477,137 +10477,75 @@ async function exportPPTX(){
       if(franquiasValidas.length === 0 && !incluirGeral) return;
 
       const s = pptx.addSlide();
-      addHeader(s, `Insight Rápido · ${tituloSlide}`);
+      addHeader(s, `Insight R\u00e1pido \u00b7 ${tituloSlide}`);
 
-      const VERDE='1B7A4B', VERMELHO='B23A48', AZUL='003595', CINZA_T='5B6B7E', AZ_CLARO='94A3B8';
-      const corVar = (v) => v>=0 ? VERDE : VERMELHO;
-      const setaVar = (v) => v>=0 ? '▲' : '▼';
+      const AZUL_I='003595', VERDE_I='1B7A4B', VERMELHO_I='B23A48', CINZA_I='5B6B7E';
+      const setaV = (v) => v>=0 ? '\u25b2' : '\u25bc';
+      const corV = (v) => v>=0 ? VERDE_I : VERMELHO_I;
+      const limpa = (t) => String(t||'').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F0FF}]/gu,'').replace(/[\uFE0F\u200D]/g,'').trim();
 
-      // ===== GERAL (consolidado do grupo) → objeto p/ a faixa de destaque =====
-      let geral = null;
+      const nFr = franquiasValidas.length;
+      const compact = nFr >= 4;
+      const fHead = compact ? 11 : 12;
+      const fDet = compact ? 9 : 10;
+      const maxDet = compact ? 3 : 6;
+
+      // Montar runs (texto + \\n + estilo; SEM bullet/breakLine = padr\u00e3o robusto)
+      const runs = [];
+
+      // ===== GERAL =====
       if(incluirGeral){
         try {
-        const baseGrupo = base.filter(r => franquiasValidas.includes(String(r[COLS.FRANQUIA])));
-        const unidA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_UNID);
-        const unidC = somarMetricaFrS3(baseGrupo, per.periodoComp, COLS.VALOR_UNID);
-        const brlA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_BRL);
-        const brlC = somarMetricaFrS3(baseGrupo, per.periodoComp, COLS.VALOR_BRL);
-        const valA = metricaAtual==='UNID'?unidA:(metricaAtual==='BRL'?brlA:somarMetricaFrS3(baseGrupo,per.periodoAtual,COLS.VALOR_USD));
-        const valC = metricaAtual==='UNID'?unidC:(metricaAtual==='BRL'?brlC:somarMetricaFrS3(baseGrupo,per.periodoComp,COLS.VALOR_USD));
-        const varPct = valC ? ((valA-valC)/valC*100) : 0;
-        const unidV = unidC ? ((unidA-unidC)/unidC*100) : 0;
-        const brlV = brlC ? ((brlA-brlC)/brlC*100) : 0;
-        // Concentração Top 5 clientes do grupo
-        const aggCliG = {};
-        const setAtG = new Set(per.periodoAtual.map(p => `${p.ano}-${p.mes}`));
-        for(const r of baseGrupo){
-          const k = `${r[COLS.ANO]}-${r[COLS.MES_NUM]}`;
-          if(!setAtG.has(k)) continue;
-          const c = r[COLS.CLIENTE] || '—';
-          aggCliG[c] = (aggCliG[c] || 0) + getValor(r);
-        }
-        const valoresCliG = Object.values(aggCliG).sort((a,b)=>b-a);
-        const totalCliG = valoresCliG.reduce((s,v)=>s+v,0);
-        const concG = totalCliG > 0 ? (valoresCliG.slice(0,5).reduce((s,v)=>s+v,0)/totalCliG*100) : 0;
-        const soG = (typeof calcularSOFranquiaMulti === 'function') ? calcularSOFranquiaMulti(franquiasValidas) : null;
-        geral = {varPct, unidV, brlV, valA, concG, soVar: soG?soG.soVar:null};
-        } catch(eG){ geral = null; }
+          const baseGrupo = base.filter(r => franquiasValidas.includes(String(r[COLS.FRANQUIA])));
+          const unidA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_UNID);
+          const unidC = somarMetricaFrS3(baseGrupo, per.periodoComp, COLS.VALOR_UNID);
+          const brlA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_BRL);
+          const brlC = somarMetricaFrS3(baseGrupo, per.periodoComp, COLS.VALOR_BRL);
+          const valA = metricaAtual==='UNID'?unidA:(metricaAtual==='BRL'?brlA:somarMetricaFrS3(baseGrupo,per.periodoAtual,COLS.VALOR_USD));
+          const valC = metricaAtual==='UNID'?unidC:(metricaAtual==='BRL'?brlC:somarMetricaFrS3(baseGrupo,per.periodoComp,COLS.VALOR_USD));
+          const varPct = valC ? ((valA-valC)/valC*100) : 0;
+          const unidV = unidC ? ((unidA-unidC)/unidC*100) : 0;
+          const brlV = brlC ? ((brlA-brlC)/brlC*100) : 0;
+          const soG = (typeof calcularSOFranquiaMulti === 'function') ? calcularSOFranquiaMulti(franquiasValidas) : null;
+          runs.push({text:`GERAL CONSOLIDADO   `, options:{bold:true, fontSize:13, color:AZUL_I}});
+          runs.push({text:`${setaV(varPct)} ${varPct>=0?'+':''}${varPct.toFixed(1)}%\n`, options:{bold:true, fontSize:13, color:corV(varPct)}});
+          runs.push({text:`Impacto em Sell-in (SI) vs PY   \u00b7   Unidades ${unidV>=0?'+':''}${unidV.toFixed(1)}%   \u00b7   Faturamento ${brlV>=0?'+':''}${brlV.toFixed(1)}%   \u00b7   Sell-out ${soG?((soG.soVar>=0?'+':'')+soG.soVar.toFixed(1)+'%'):'n/d'}   \u00b7   Total ${fmt(valA)}\n\n`, options:{fontSize:10, color:CINZA_I, bold:true}});
+        } catch(eG){}
       }
 
-      // ===== Blocos por franquia (cada um vira um cartão) =====
-      const franquiaBlocks = [];
+      // ===== Por franquia =====
       franquiasValidas.forEach(fr => {
         try {
           const bl = analisarFranquiaDetalhado(fr);
           if(bl && bl.length){
-            const head = bl[0].txt || '';
-            const arrow = head.includes('▲') ? '▲' : (head.includes('▼') ? '▼' : '●');
-            const cor = arrow==='▲'?VERDE:(arrow==='▼'?VERMELHO:CINZA_T);
-            const resumoBase = (head.split(':').slice(1).join(':') || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim();
-            const resumo = resumoBase ? `${resumoBase} · SI vs PY` : '';
-            const detalhes = bl.slice(1).map(b => (b.txt||'').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim())
-                               .filter(t => t && !/:\s*$/.test(t) && !/:\s*(n\/d|—|-)\s*$/i.test(t) && t.length>3);
-            franquiaBlocks.push({nome: fr, resumo, cor, detalhes});
+            const head = limpa(bl[0].txt);
+            runs.push({text:`${head}   \u00b7   SI vs PY\n`, options:{bold:true, fontSize:fHead, color:AZUL_I}});
+            let c = 0;
+            for(let k=1;k<bl.length && c<maxDet;k++){
+              const t = limpa(bl[k] && bl[k].txt);
+              if(t && !/:\s*$/.test(t) && t.length>3){ runs.push({text:`      \u2022  ${t}\n`, options:{fontSize:fDet, color:'1E3A5F'}}); c++; }
+            }
+            runs.push({text:`\n`, options:{fontSize:6}});
+          } else {
+            runs.push({text:`${fr}\n\n`, options:{bold:true, fontSize:fHead, color:AZUL_I}});
           }
         } catch(eFr){
-          // se a análise de uma franquia falhar, ainda mostra o cartão básico
-          franquiaBlocks.push({nome: fr, resumo: '', cor: CINZA_T, detalhes: []});
+          runs.push({text:`${fr}\n\n`, options:{bold:true, fontSize:fHead, color:AZUL_I}});
         }
       });
 
-      // ===== RENDER =====
-      // ===== RENDER (robusto: try/catch nunca deixa o slide em branco) =====
+      if(runs.length === 0) runs.push({text:'Sem dados de insight para este grupo nos filtros atuais.', options:{fontSize:12, italic:true, color:CINZA_I}});
+
+      // ===== RENDER: um \u00fanico addText (padr\u00e3o que sempre funcionou) com fallback de string pura =====
       try {
-      let yCursor = 0.95;
-      // --- Faixa GERAL ---
-      if(geral){
-        const hHero = 1.5;
-        s.addShape('roundRect', {x:0.4, y:yCursor, w:12.53, h:hHero, fill:{color:'F0F6FC'}, line:{color:'D6E2EF',width:1}, rectRadius:0.06});
-        s.addShape('rect', {x:0.4, y:yCursor, w:0.12, h:hHero, fill:{color:AZUL}});
-        s.addText('GERAL CONSOLIDADO', {x:0.68, y:yCursor+0.12, w:4, h:0.28, fontSize:11, bold:true, color:AZUL, charSpacing:1});
-        s.addText(`${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}%`, {x:0.66, y:yCursor+0.44, w:3.9, h:0.62, fontSize:30, bold:true, color:corVar(geral.varPct), valign:'middle'});
-        s.addText(`Impacto: Sell-in (SI) vs PY · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.95, h:0.28, fontSize:9.5, color:AZUL, bold:true});
-        // chips à direita
-        const chips = [
-          {lbl:'UNIDADES', val:`${geral.unidV>=0?'+':''}${geral.unidV.toFixed(1)}%`, cor:corVar(geral.unidV)},
-          {lbl:'FATURAMENTO', val:`${geral.brlV>=0?'+':''}${geral.brlV.toFixed(1)}%`, cor:corVar(geral.brlV)},
-          {lbl:'SELL-OUT', val: geral.soVar!=null?`${geral.soVar>=0?'+':''}${geral.soVar.toFixed(1)}%`:'n/d', cor: geral.soVar!=null?corVar(geral.soVar):AZ_CLARO},
-          {lbl:'TOP 5 CLIENTES', val:`${geral.concG.toFixed(0)}%`, cor:AZUL},
-        ];
-        let cx = 4.7; const chipW = 2.0;
-        chips.forEach(ch => {
-          s.addShape('roundRect', {x:cx, y:yCursor+0.22, w:chipW-0.12, h:1.06, fill:{color:'FFFFFF'}, line:{color:'E2EAF3',width:0.75}, rectRadius:0.04});
-          s.addText(ch.lbl, {x:cx, y:yCursor+0.34, w:chipW-0.12, h:0.24, fontSize:7.5, bold:true, color:AZ_CLARO, align:'center', charSpacing:0.5});
-          s.addText(ch.val, {x:cx, y:yCursor+0.60, w:chipW-0.12, h:0.5, fontSize:17, bold:true, color:ch.cor, align:'center'});
-          cx += chipW;
-        });
-        yCursor += hHero + 0.18;
+        s.addText(runs, {x:0.4, y:0.95, w:12.5, h:5.95, fill:{color:'F4F8FC'}, valign:'top', margin:14, line:{color:AZUL_I, width:1}});
+      } catch(eR){
+        try { s.addText(runs.map(r=>r.text).join(''), {x:0.4, y:0.95, w:12.5, h:5.95, valign:'top', margin:14, fontSize:fDet, color:'1E3A5F'}); } catch(e2){}
       }
-      // --- Cartões por franquia ---
-      const nFr = franquiaBlocks.length;
-      if(nFr > 0){
-        const yStart = yCursor, yEnd = 6.95, dispH = yEnd - yStart;
-        const cols = nFr >= 4 ? 2 : 1;
-        const rows = Math.ceil(nFr / cols);
-        const gap = 0.16;
-        const cardW = cols===2 ? (12.53 - gap)/2 : 12.53;
-        const cardH = Math.min(3.4, (dispH - gap*(rows-1)) / rows);
-        const maxDet = cardH > 2.6 ? 7 : (cardH > 1.9 ? 6 : (cardH > 1.2 ? 3 : 2));
-        const detFont = cardH > 2.6 ? 11 : (cardH > 1.9 ? 10.5 : 9.5);
-        franquiaBlocks.forEach((fb, i) => {
-          const col = cols===2 ? (i % 2) : 0;
-          const row = cols===2 ? Math.floor(i/2) : i;
-          const x = 0.4 + col * (cardW + gap);
-          const y = yStart + row * (cardH + gap);
-          s.addShape('roundRect', {x, y, w:cardW, h:cardH, fill:{color:'FFFFFF'}, line:{color:'D6E2EF',width:1}, rectRadius:0.05});
-          s.addShape('rect', {x, y, w:0.1, h:cardH, fill:{color:fb.cor}});
-          s.addText(`${fb.nome}    ${fb.resumo}`, {x:x+0.24, y:y+0.10, w:cardW-0.4, h:0.34, valign:'middle', bold:true, color:AZUL, fontSize:13});
-          const detalhesShow = fb.detalhes.slice(0, maxDet);
-          if(detalhesShow.length){
-            // string simples (mais robusta que runs com bullet/breakLine)
-            const detStr = detalhesShow.map(t => '•  ' + t).join('\n');
-            s.addText(detStr, {x:x+0.30, y:y+0.50, w:cardW-0.52, h:cardH-0.60, fontSize:detFont, color:'1E3A5F', valign:'top', lineSpacingMultiple:1.12, paraSpaceAfter:3});
-          }
-        });
-      }
-      // rodapé contextual
-      s.addText(`${tituloSlide} · impacto em Sell-in (SI) vs ano anterior (PY) · ${per.labelAtual} vs ${per.labelComp || 'YA'} · ${mLabel}`, {
-        x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T, fontFace:'Open Sans'
+
+      s.addText(`${tituloSlide} \u00b7 impacto em Sell-in (SI) vs ano anterior (PY) \u00b7 ${per.labelAtual} vs ${per.labelComp || 'YA'} \u00b7 ${mLabel}`, {
+        x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_I
       });
-      } catch(eRender){
-        // FALLBACK: render simples em texto — garante que o insight nunca fica em branco
-        try {
-          const fbTxt = [];
-          if(geral) fbTxt.push(`GERAL: ${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}% · Impacto em Sell-in (SI) vs PY (${fmt(geral.valA)})`);
-          franquiaBlocks.forEach(fb => {
-            fbTxt.push('');
-            fbTxt.push(`${fb.nome}  ${fb.resumo}`);
-            fb.detalhes.slice(0,6).forEach(d => fbTxt.push('   • ' + d));
-          });
-          s.addText(fbTxt.join('\n'), {x:0.4, y:0.95, w:12.5, h:6.0, fill:{color:'F8FBFE'}, valign:'top', margin:14, line:{color:AZUL, width:1}, fontSize:11, color:'1E3A5F'});
-          s.addText(`${tituloSlide} · impacto em Sell-in (SI) vs ano anterior (PY)`, {x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T});
-        } catch(e2){}
-      }
     }
 
     // Detectar franquias disponíveis
