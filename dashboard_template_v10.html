@@ -9406,6 +9406,45 @@ async function exportPPTX(){
     const momPct = valMesAnt ? ((valMesAtual-valMesAnt)/valMesAnt*100) : 0;
 
     // ============================================================
+    // SLIDE 2 - AGENDA (índice das seções do relatório)
+    // ============================================================
+    {
+      const sAg = pptx.addSlide();
+      sAg.background = {color:'FFFFFF'};
+      addHeader(sAg, 'Agenda');
+      sAg.addText('Conteúdo do relatório', {x:0.5, y:0.95, w:12.3, h:0.4, fontSize:13, italic:true, color:'5B6B7E', fontFace:'Open Sans'});
+      const agItens = [
+        'Indicadores e Benchmark',
+        'Análise por Tipo de Cliente',
+        'Resumo Comparativo · Key Accounts',
+        'Comparativa Sell-in × Sell-out',
+        'Insight Rápido por Franquia',
+        'Plano de Ação · Prioridades',
+        'Evolução Mensal · Mês atual vs Ano anterior',
+        'Sell-in × Sell-out · Últimos 12 meses',
+        'Maiores Crescimentos e Quedas · Diagnóstico',
+        'Evolução Systane',
+        'Targets Financeiros e Detalhe por Franquia',
+        'Top 15 Crescimento de Produtos',
+        'Produtos Acima e Abaixo do Target',
+        'Movers',
+        'Crescimento por Produto 2024-26',
+        'Plano de Recuperação'
+      ];
+      const colAg = (itens, x, off) => {
+        itens.forEach((it, i) => {
+          const y = 1.55 + i*0.66;
+          sAg.addShape('roundRect', {x:x, y:y, w:5.85, h:0.52, fill:{color: i%2===0?'F4F8FC':'FFFFFF'}, line:{color:'E2EAF3',width:0.75}, rectRadius:0.04});
+          sAg.addShape('roundRect', {x:x+0.06, y:y+0.07, w:0.38, h:0.38, fill:{color:'0C3D8E'}, line:{type:'none'}, rectRadius:0.04});
+          sAg.addText(String(off+i+1), {x:x+0.06, y:y+0.07, w:0.38, h:0.38, fontSize:12, bold:true, color:'FFFFFF', align:'center', valign:'middle'});
+          sAg.addText(it, {x:x+0.56, y:y, w:5.2, h:0.52, fontSize:11.5, color:'1E3A5F', valign:'middle', fontFace:'Open Sans'});
+        });
+      };
+      colAg(agItens.slice(0,8), 0.5, 0);
+      colAg(agItens.slice(8), 6.85, 8);
+    }
+
+    // ============================================================
     // SLIDE 2 - KPIs + BENCHMARK
     // ============================================================
     const s2 = pptx.addSlide();
@@ -10384,9 +10423,12 @@ async function exportPPTX(){
       const s = pptx.addSlide();
       addHeader(s, `Insight Rápido · ${tituloSlide}`);
 
-      const allBullets = [];
+      const VERDE='1B7A4B', VERMELHO='B23A48', AZUL='003595', CINZA_T='5B6B7E', AZ_CLARO='94A3B8';
+      const corVar = (v) => v>=0 ? VERDE : VERMELHO;
+      const setaVar = (v) => v>=0 ? '▲' : '▼';
 
-      // Bloco GERAL (consolidado do grupo) - opcional
+      // ===== GERAL (consolidado do grupo) → objeto p/ a faixa de destaque =====
+      let geral = null;
       if(incluirGeral){
         const baseGrupo = base.filter(r => franquiasValidas.includes(String(r[COLS.FRANQUIA])));
         const unidA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_UNID);
@@ -10398,30 +10440,7 @@ async function exportPPTX(){
         const varPct = valC ? ((valA-valC)/valC*100) : 0;
         const unidV = unidC ? ((unidA-unidC)/unidC*100) : 0;
         const brlV = brlC ? ((brlA-brlC)/brlC*100) : 0;
-        const seta = varPct >= 0 ? '▲' : '▼';
-
-        allBullets.push({lvl:0, txt:`🌍 GERAL (consolidado): ${seta} ${varPct>=0?'+':''}${varPct.toFixed(1)}% em ${mLabel} (${fmt(valA)})`, header:true});
-
-        // Performance com driver (volume vs preço/mix)
-        let driverG = 'volume e preço equilibrados';
-        if(Math.abs(unidV) > 0.5 && Math.abs(brlV) > 0.5){
-          const gapDr = brlV - unidV;
-          if(Math.abs(gapDr) < 2) driverG = 'crescimento equilibrado (volume ≈ preço)';
-          else if(gapDr > 2) driverG = `driver preço/mix (BRL +${Math.abs(gapDr).toFixed(1)}pp acima de UNID)`;
-          else driverG = `driver volume (UNID +${Math.abs(gapDr).toFixed(1)}pp acima de BRL)`;
-        }
-        allBullets.push({lvl:1, txt:`Performance: UNID ${unidV>=0?'+':''}${unidV.toFixed(1)}% · BRL ${brlV>=0?'+':''}${brlV.toFixed(1)}% vs ${per.labelComp} · ${driverG}`});
-
-        // Decomposição consolidada (se BRL/USD) - com valores
-        if(metricaAtual !== 'UNID' && window.__decompResultado){
-          const d = window.__decompResultado;
-          const totalAbs = Math.abs(d.totalVolume)+Math.abs(d.totalPreco)+Math.abs(d.totalMix);
-          if(totalAbs > 0){
-            allBullets.push({lvl:1, txt:`Decomposição: Volume ${(Math.abs(d.totalVolume)/totalAbs*100).toFixed(0)}% (${d.totalVolume>=0?'+':'-'}${fmt(Math.abs(d.totalVolume))}) · Preço ${(Math.abs(d.totalPreco)/totalAbs*100).toFixed(0)}% (${d.totalPreco>=0?'+':'-'}${fmt(Math.abs(d.totalPreco))}) · Mix ${(Math.abs(d.totalMix)/totalAbs*100).toFixed(0)}% (${d.totalMix>=0?'+':'-'}${fmt(Math.abs(d.totalMix))})`});
-          }
-        }
-
-        // Concentração Top 5 clientes + franquias do grupo
+        // Concentração Top 5 clientes do grupo
         const aggCliG = {};
         const setAtG = new Set(per.periodoAtual.map(p => `${p.ano}-${p.mes}`));
         for(const r of baseGrupo){
@@ -10432,92 +10451,81 @@ async function exportPPTX(){
         }
         const valoresCliG = Object.values(aggCliG).sort((a,b)=>b-a);
         const totalCliG = valoresCliG.reduce((s,v)=>s+v,0);
-        const top5G = valoresCliG.slice(0,5).reduce((s,v)=>s+v,0);
-        const concG = totalCliG > 0 ? (top5G/totalCliG*100) : 0;
-        const concIcon = concG >= 80 ? 'Alta concentração' : (concG >= 60 ? 'Concentração' : 'Distribuição equilibrada');
-        allBullets.push({lvl:1, txt:`${concIcon}: Top 5 clientes = ${concG.toFixed(1)}% do faturamento do grupo`});
-
-        // Sell-out cruzado do grupo (se disponível)
-        const soG = (typeof calcularSOFranquiaMulti === 'function')
-          ? calcularSOFranquiaMulti(franquiasValidas)
-          : null;
-        if(soG){
-          const gapG = varPct - soG.soVar;
-          let txtSOG;
-          if(varPct >= 0 && soG.soVar >= 0){
-            if(gapG > 10) txtSOG = `Risco de excesso de estoque: SI ${gapG.toFixed(1)}pp acima do SO`;
-            else if(gapG > 5) txtSOG = `Atenção ao giro: SI ${gapG.toFixed(1)}pp acima do SO`;
-            else if(Math.abs(gapG) <= 5) txtSOG = `Equilíbrio canal × demanda (gap ${gapG>=0?'+':''}${gapG.toFixed(1)}pp)`;
-            else txtSOG = `Possível ruptura: SO ${Math.abs(gapG).toFixed(1)}pp acima do SI`;
-          } else if(varPct < 0 && soG.soVar >= 0){
-            txtSOG = `Demanda positiva, abastecimento em retração (SI ${varPct.toFixed(1)}% vs SO +${soG.soVar.toFixed(1)}%)`;
-          } else if(varPct >= 0 && soG.soVar < 0){
-            txtSOG = `Excesso de estoque no canal: SI +${varPct.toFixed(1)}% vs SO ${soG.soVar.toFixed(1)}%`;
-          } else {
-            txtSOG = `Retração compartilhada: SI ${varPct.toFixed(1)}% e SO ${soG.soVar.toFixed(1)}%`;
-          }
-          allBullets.push({lvl:1, txt:`Sell-out: ${soG.soVar>=0?'+':''}${soG.soVar.toFixed(1)}% · ${txtSOG}`});
-        }
-
-        allBullets.push({lvl:0, txt:'', spacer:true});
+        const concG = totalCliG > 0 ? (valoresCliG.slice(0,5).reduce((s,v)=>s+v,0)/totalCliG*100) : 0;
+        const soG = (typeof calcularSOFranquiaMulti === 'function') ? calcularSOFranquiaMulti(franquiasValidas) : null;
+        geral = {varPct, unidV, brlV, valA, concG, soVar: soG?soG.soVar:null};
       }
 
-      // Bloco por franquia (detalhado)
+      // ===== Blocos por franquia (cada um vira um cartão) =====
+      const franquiaBlocks = [];
       franquiasValidas.forEach(fr => {
         const bl = analisarFranquiaDetalhado(fr);
-        if(bl){
-          bl.forEach((b, i) => { if(i === 0) b.header = true; allBullets.push(b); });
-          allBullets.push({lvl:0, txt:'', spacer:true});
+        if(bl && bl.length){
+          const head = bl[0].txt || '';
+          const arrow = head.includes('▲') ? '▲' : (head.includes('▼') ? '▼' : '●');
+          const cor = arrow==='▲'?VERDE:(arrow==='▼'?VERMELHO:CINZA_T);
+          const resumo = (head.split(':').slice(1).join(':') || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim();
+          const detalhes = bl.slice(1).map(b => (b.txt||'').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim())
+                             .filter(t => t && !/:\s*$/.test(t) && !/:\s*(n\/d|—|-)\s*$/i.test(t) && t.length>3);
+          franquiaBlocks.push({nome: fr, resumo, cor, detalhes});
         }
       });
 
-      // Renderizar bullets no slide
-      // Limpar bullets vazios/poluídos: remove os sem conteúdo após o rótulo
-      // (ex.: "Driver: ", "Top produtos: ", ": n/d") e emojis decorativos
-      for(let i = allBullets.length - 1; i >= 0; i--){
-        const b = allBullets[i];
-        if(b.spacer || b.header) continue;
-        let t = (b.txt || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g, '').trim();
-        // remove se vazio, ou se termina logo após "rótulo:" sem valor, ou valor n/d
-        const semValor = /:\s*$/.test(t) || /:\s*(n\/d|—|-)\s*$/i.test(t) || t.length < 3;
-        if(semValor){ allBullets.splice(i, 1); }
-        else { b.txt = t; }
-      }
-      // remover spacers duplicados/órfãos no fim
-      while(allBullets.length && allBullets[allBullets.length-1].spacer) allBullets.pop();
-
-      // Fonte adaptativa: se muitos bullets, reduzir para caber
-      const nLinhas = allBullets.filter(b => !b.spacer).length;
-      const fonteHeader = nLinhas > 14 ? 12 : 13;
-      const fonteBullet = nLinhas > 18 ? 9.5 : (nLinhas > 14 ? 10 : 11);
-      const espacoAfter = nLinhas > 14 ? 2 : 3;
-
-      const textRuns = [];
-      allBullets.forEach(b => {
-        if(b.spacer){
-          textRuns.push({text:'\n', options:{fontSize:4}});
-          return;
-        }
-        textRuns.push({
-          text: b.txt + '\n',
-          options: {
-            bullet: b.header ? false : {indent: b.lvl > 0 ? 0.3 : 0},
-            fontSize: b.header ? fonteHeader : fonteBullet,
-            bold: b.header ? true : false,
-            color: b.header ? '003595' : '1E3A5F',
-            paraSpaceAfter: b.header ? (espacoAfter+1) : espacoAfter,
-            indentLevel: b.lvl
-          }
+      // ===== RENDER =====
+      let yCursor = 0.95;
+      // --- Faixa GERAL ---
+      if(geral){
+        const hHero = 1.5;
+        s.addShape('roundRect', {x:0.4, y:yCursor, w:12.53, h:hHero, fill:{color:'F0F6FC'}, line:{color:'D6E2EF',width:1}, rectRadius:0.06});
+        s.addShape('rect', {x:0.4, y:yCursor, w:0.12, h:hHero, fill:{color:AZUL}});
+        s.addText('GERAL CONSOLIDADO', {x:0.68, y:yCursor+0.12, w:4, h:0.28, fontSize:11, bold:true, color:AZUL, charSpacing:1});
+        s.addText(`${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}%`, {x:0.66, y:yCursor+0.44, w:3.9, h:0.62, fontSize:30, bold:true, color:corVar(geral.varPct), valign:'middle'});
+        s.addText(`em ${mLabel} · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.9, h:0.28, fontSize:9.5, color:CINZA_T});
+        // chips à direita
+        const chips = [
+          {lbl:'UNIDADES', val:`${geral.unidV>=0?'+':''}${geral.unidV.toFixed(1)}%`, cor:corVar(geral.unidV)},
+          {lbl:'FATURAMENTO', val:`${geral.brlV>=0?'+':''}${geral.brlV.toFixed(1)}%`, cor:corVar(geral.brlV)},
+          {lbl:'SELL-OUT', val: geral.soVar!=null?`${geral.soVar>=0?'+':''}${geral.soVar.toFixed(1)}%`:'n/d', cor: geral.soVar!=null?corVar(geral.soVar):AZ_CLARO},
+          {lbl:'TOP 5 CLIENTES', val:`${geral.concG.toFixed(0)}%`, cor:AZUL},
+        ];
+        let cx = 4.7; const chipW = 2.0;
+        chips.forEach(ch => {
+          s.addShape('roundRect', {x:cx, y:yCursor+0.22, w:chipW-0.12, h:1.06, fill:{color:'FFFFFF'}, line:{color:'E2EAF3',width:0.75}, rectRadius:0.04});
+          s.addText(ch.lbl, {x:cx, y:yCursor+0.34, w:chipW-0.12, h:0.24, fontSize:7.5, bold:true, color:AZ_CLARO, align:'center', charSpacing:0.5});
+          s.addText(ch.val, {x:cx, y:yCursor+0.60, w:chipW-0.12, h:0.5, fontSize:17, bold:true, color:ch.cor, align:'center'});
+          cx += chipW;
         });
-      });
+        yCursor += hHero + 0.18;
+      }
+      // --- Cartões por franquia ---
+      const nFr = franquiaBlocks.length;
+      if(nFr > 0){
+        const yStart = yCursor, yEnd = 6.95, dispH = yEnd - yStart;
+        const cols = nFr >= 4 ? 2 : 1;
+        const rows = Math.ceil(nFr / cols);
+        const gap = 0.16;
+        const cardW = cols===2 ? (12.53 - gap)/2 : 12.53;
+        const cardH = Math.min(1.55, (dispH - gap*(rows-1)) / rows);
+        franquiaBlocks.forEach((fb, i) => {
+          const col = cols===2 ? (i % 2) : 0;
+          const row = cols===2 ? Math.floor(i/2) : i;
+          const x = 0.4 + col * (cardW + gap);
+          const y = yStart + row * (cardH + gap);
+          s.addShape('roundRect', {x, y, w:cardW, h:cardH, fill:{color:'FFFFFF'}, line:{color:'D6E2EF',width:1}, rectRadius:0.05});
+          s.addShape('rect', {x, y, w:0.1, h:cardH, fill:{color:fb.cor}});
+          s.addText([
+            {text:fb.nome, options:{bold:true, color:AZUL, fontSize:12}},
+            {text:`    ${fb.resumo}`, options:{bold:true, color:fb.cor, fontSize:11}},
+          ], {x:x+0.24, y:y+0.08, w:cardW-0.4, h:0.34, valign:'middle'});
+          const maxDet = cardH > 1.2 ? 3 : 2;
+          const det = fb.detalhes.slice(0, maxDet).join('\n');
+          if(det) s.addText(det, {x:x+0.24, y:y+0.48, w:cardW-0.42, h:cardH-0.56, fontSize:9.5, color:'1E3A5F', valign:'top', lineSpacingMultiple:1.05});
+        });
+      }
 
-      s.addText(textRuns, {
-        x:0.4, y:0.95, w:12.5, h:6.0,
-        fill:{color:'F8FBFE'}, valign:'top', margin:14, line:{color:'003595', width:1}
-      });
-
+      // rodapé contextual
       s.addText(`${tituloSlide} · ${per.labelAtual} vs ${per.labelComp || 'YA'} · ${mLabel}`, {
-        x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA, fontFace:'Open Sans'
+        x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T, fontFace:'Open Sans'
       });
     }
 
@@ -13151,42 +13159,6 @@ async function exportPPTX(){
     franqsOrdenadasPR.forEach(fr => {
       gerarSlidesPlanoGrupo(fr, [fr]);
     });
-
-    // ============================================================
-    // SLIDE AGENDA (criado por último, reposicionado para 2º via reorder)
-    // ============================================================
-    const sAgenda = pptx.addSlide();
-    sAgenda.background = {color:'FFFFFF'};
-    addHeader(sAgenda, 'Agenda');
-    const agendaItens = [
-      'Indicadores e Benchmark',
-      'Análise por Tipo de Cliente',
-      'Resumo Comparativo · Key Accounts',
-      'Análise Comparativa Sell-in × Sell-out',
-      'Insight Rápido',
-      'Plano de Ação · Prioridades',
-      'Evolução Mensal · Mês atual vs Ano anterior',
-      'Sell-in × Sell-out · Últimos 12 meses (valor e unidade)',
-      'Maiores Crescimentos e Quedas · Diagnóstico',
-      'Evolução Systane',
-      'Targets Financeiros e Detalhe por Franquia',
-      'Top 15 Crescimento de Produtos e Sell-out',
-      'Produtos Acima e Abaixo do Target',
-      'Movers',
-      'Crescimento por Produto 2024-26 e Sell-out',
-      'Plano de Recuperação'
-    ];
-    const colA = agendaItens.slice(0, 8), colB = agendaItens.slice(8);
-    const drawAgendaCol = (itens, x, off) => {
-      itens.forEach((it, i) => {
-        const y = 1.25 + i*0.62;
-        sAgenda.addShape(pptx.ShapeType.rect, {x:x, y:y, w:0.42, h:0.34, fill:{color:'1A5FB4'}, line:{type:'none'}});
-        sAgenda.addText(String(off+i+1), {x:x, y:y, w:0.42, h:0.34, fontSize:13, bold:true, color:BRANCO, align:'center', valign:'middle'});
-        sAgenda.addText(it, {x:x+0.58, y:y, w:5.7, h:0.34, fontSize:12, color:AZUL_ESCURO, valign:'middle', fontFace:'Open Sans'});
-      });
-    };
-    drawAgendaCol(colA, 0.5, 0);
-    drawAgendaCol(colB, 6.9, 8);
 
     // ============================================================
     // REORGANIZAÇÃO FINAL DA ORDEM DOS SLIDES (ordem executiva)
