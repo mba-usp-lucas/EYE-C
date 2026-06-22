@@ -10264,6 +10264,43 @@ async function exportPPTX(){
     }
 
     // ============================================================
+    // SLIDE: DETALHAMENTO SELL-IN × SELL-OUT POR FRANQUIA (espelha o HTML)
+    // ============================================================
+    if(window.__franquiaResultado && window.__franquiaResultado.length > 0){
+      const sDetSISO = pptx.addSlide();
+      sDetSISO.background = {color: BRANCO};
+      addHeader(sDetSISO, `Detalhamento Sell-in × Sell-out por Franquia · ${mLabel}`);
+      sDetSISO.addText('Variação YoY · Total Brasil + Franquias', {x:0.4, y:0.95, w:12.5, h:0.3, fontSize:13, bold:true, color:AZUL, fontFace:'Open Sans'});
+
+      const linhasDet = window.__franquiaResultado.slice();
+      const nDet = linhasDet.length;
+      const fD = nDet > 8 ? 9 : 11;
+      const rHD = nDet > 8 ? 0.34 : 0.46;
+      const rowsDet = [[
+        {text:'Franquia', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:fD}},
+        {text:'SI Atual', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:fD, align:'right'}},
+        {text:'SI Δ% PY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:fD, align:'right'}},
+        {text:'SO Δ% PY', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:fD, align:'right'}},
+        {text:'Gap SI-SO', options:{bold:true, color:BRANCO, fill:{color:'0F2744'}, fontSize:fD, align:'right'}}
+      ]];
+      linhasDet.forEach(l => {
+        const corSI = l.siVar>=0?VERDE:VERMELHO;
+        const corSO = l.soVar>=0?VERDE:VERMELHO;
+        rowsDet.push([
+          {text:l.franquia, options:{bold:true, fontSize:fD, color:'1E3A5F'}},
+          {text:fmt(l.siAtual), options:{align:'right', fontSize:fD}},
+          {text:`${l.siVar>=0?'▲ +':'▼ '}${l.siVar.toFixed(1)}%`, options:{align:'right', bold:true, color:corSI, fontSize:fD}},
+          {text: l.temSO?`${l.soVar>=0?'▲ +':'▼ '}${l.soVar.toFixed(1)}%`:'n/d', options:{align:'right', bold:true, color: l.temSO?corSO:'94A3B8', fontSize:fD}},
+          {text: (l.temSO && l.gap!==null)?`${l.gap>=0?'+':''}${l.gap.toFixed(1)}pp`:'n/d', options:{align:'right', bold:(l.temSO&&Math.abs(l.gap)>5), color: (l.temSO&&Math.abs(l.gap)>5)?LARANJA:'64748B', fontSize:fD}}
+        ]);
+      });
+      sDetSISO.addTable(rowsDet, {x:0.4, y:1.4, w:12.5, colW:[4.0, 2.4, 2.1, 2.1, 1.9], rowH:rHD, fontSize:fD, valign:'middle', border:{type:'solid', pt:0.5, color:'E5E7EB'}, autoPage:false});
+      sDetSISO.addText('Gap SI-SO > 5pp pode indicar descompasso (estoque crescendo ou demanda em ajuste). n/d = franquia sem sell-out disponível.', {
+        x:0.4, y:6.9, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA, fontFace:'Open Sans'
+      });
+    }
+
+    // ============================================================
     // SLIDES INSIGHT RÁPIDO - 3 slides agrupados por franquia
     // Slide 1: GERAL + DE&OH + CLC | Slide 2: GLAUCOMA + PÓS-OP/PATANOL S | Slide 3: CL (Lentes)
     // ============================================================
@@ -10413,6 +10450,20 @@ async function exportPPTX(){
         bullets.push({lvl:1, txt:`Top clientes (${concFr.toFixed(0)}% do total): ${cliTxt}`});
       }
 
+      // 7. Ações relacionadas (do plano de ação) + foco — igual ao HTML
+      if(window.__planoAcaoResultado){
+        const pa = window.__planoAcaoResultado;
+        const naFr = (arr) => (arr||[]).filter(a => (a.franquia||'') === nomeFranquia);
+        const crit = naFr(pa.criticos), aten = naFr(pa.atencao), oport = naFr(pa.oportunidades);
+        const partes = [];
+        if(crit.length) partes.push(`${crit.length} crítico${crit.length>1?'s':''}`);
+        if(aten.length) partes.push(`${aten.length} atenção`);
+        if(oport.length) partes.push(`${oport.length} oportunidade${oport.length>1?'s':''}`);
+        if(partes.length) bullets.push({lvl:1, txt:`Ações: ${partes.join(' · ')}`});
+        const foco = crit[0] || aten[0] || oport[0];
+        if(foco && foco.nome) bullets.push({lvl:1, txt:`Foco: ${foco.nome}`});
+      }
+
       return bullets;
     }
 
@@ -10483,7 +10534,7 @@ async function exportPPTX(){
         s.addShape('rect', {x:0.4, y:yCursor, w:0.12, h:hHero, fill:{color:AZUL}});
         s.addText('GERAL CONSOLIDADO', {x:0.68, y:yCursor+0.12, w:4, h:0.28, fontSize:11, bold:true, color:AZUL, charSpacing:1});
         s.addText(`${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}%`, {x:0.66, y:yCursor+0.44, w:3.9, h:0.62, fontSize:30, bold:true, color:corVar(geral.varPct), valign:'middle'});
-        s.addText(`em ${mLabel} · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.9, h:0.28, fontSize:9.5, color:CINZA_T});
+        s.addText(`Sell-in vs PY · ${mLabel} · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.9, h:0.28, fontSize:9.5, color:CINZA_T});
         // chips à direita
         const chips = [
           {lbl:'UNIDADES', val:`${geral.unidV>=0?'+':''}${geral.unidV.toFixed(1)}%`, cor:corVar(geral.unidV)},
@@ -10508,7 +10559,10 @@ async function exportPPTX(){
         const rows = Math.ceil(nFr / cols);
         const gap = 0.16;
         const cardW = cols===2 ? (12.53 - gap)/2 : 12.53;
-        const cardH = Math.min(1.55, (dispH - gap*(rows-1)) / rows);
+        const cardH = Math.min(3.4, (dispH - gap*(rows-1)) / rows);
+        // Quanto maior o cartão, mais detalhes e fonte maior
+        const maxDet = cardH > 2.6 ? 7 : (cardH > 1.9 ? 6 : (cardH > 1.2 ? 3 : 2));
+        const detFont = cardH > 2.6 ? 11 : (cardH > 1.9 ? 10.5 : 9.5);
         franquiaBlocks.forEach((fb, i) => {
           const col = cols===2 ? (i % 2) : 0;
           const row = cols===2 ? Math.floor(i/2) : i;
@@ -10517,17 +10571,19 @@ async function exportPPTX(){
           s.addShape('roundRect', {x, y, w:cardW, h:cardH, fill:{color:'FFFFFF'}, line:{color:'D6E2EF',width:1}, rectRadius:0.05});
           s.addShape('rect', {x, y, w:0.1, h:cardH, fill:{color:fb.cor}});
           s.addText([
-            {text:fb.nome, options:{bold:true, color:AZUL, fontSize:12}},
-            {text:`    ${fb.resumo}`, options:{bold:true, color:fb.cor, fontSize:11}},
-          ], {x:x+0.24, y:y+0.08, w:cardW-0.4, h:0.34, valign:'middle'});
-          const maxDet = cardH > 1.2 ? 3 : 2;
-          const det = fb.detalhes.slice(0, maxDet).join('\n');
-          if(det) s.addText(det, {x:x+0.24, y:y+0.48, w:cardW-0.42, h:cardH-0.56, fontSize:9.5, color:'1E3A5F', valign:'top', lineSpacingMultiple:1.05});
+            {text:fb.nome, options:{bold:true, color:AZUL, fontSize:13}},
+            {text:`    ${fb.resumo}`, options:{bold:true, color:fb.cor, fontSize:11.5}},
+          ], {x:x+0.24, y:y+0.10, w:cardW-0.4, h:0.34, valign:'middle'});
+          const detalhesShow = fb.detalhes.slice(0, maxDet);
+          if(detalhesShow.length){
+            const detRuns = detalhesShow.map(t => ({text:t, options:{bullet:{indent:0.12}, fontSize:detFont, color:'1E3A5F', paraSpaceAfter:5, breakLine:true}}));
+            s.addText(detRuns, {x:x+0.30, y:y+0.50, w:cardW-0.52, h:cardH-0.60, valign:'top'});
+          }
         });
       }
 
       // rodapé contextual
-      s.addText(`${tituloSlide} · ${per.labelAtual} vs ${per.labelComp || 'YA'} · ${mLabel}`, {
+      s.addText(`${tituloSlide} · impacto em Sell-in (SI) vs ano anterior (PY) · ${per.labelAtual} vs ${per.labelComp || 'YA'} · ${mLabel}`, {
         x:0.4, y:7.05, w:12.5, h:0.3, fontSize:9, italic:true, color:CINZA_T, fontFace:'Open Sans'
       });
     }
@@ -10545,8 +10601,8 @@ async function exportPPTX(){
     const grupo1 = todasFranquiasS3.filter(fr => matchFr(fr, ['DE&OH', 'DEOH', 'DE & OH', 'CLC']));
     // Grupo 2: GLAUCOMA + PÓS-OP/PATANOL S
     const grupo2 = todasFranquiasS3.filter(fr => matchFr(fr, ['GLAUCOMA', 'PÓS', 'POS-OP', 'POS OP', 'PATANOL']));
-    // Grupo 3: CL / LENTES
-    const grupo3 = todasFranquiasS3.filter(fr => matchFr(fr, ['LENTES', 'LENTE', 'CL ', ' CL', 'CONTACT']) && !matchFr(fr, ['CLC']));
+    // Grupo 3: CL / LENTES (inclui o nome exato "CL")
+    const grupo3 = todasFranquiasS3.filter(fr => (up(fr).trim()==='CL' || matchFr(fr, ['LENTES', 'LENTE', 'CONTACT', 'CONTATO'])) && !matchFr(fr, ['CLC']));
     // Franquias não classificadas → cair no grupo 1 (geral)
     const classificadas = new Set([...grupo1, ...grupo2, ...grupo3]);
     const naoClassificadas = todasFranquiasS3.filter(fr => !classificadas.has(fr));
@@ -11030,8 +11086,8 @@ async function exportPPTX(){
     const rowsCSI = [[
       {text:'#', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'center'}},
       {text:'Cliente', options:{bold:true, color:BRANCO, fill:{color:AZUL}}},
-      {text:'Atual', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}},
-      {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}}
+      {text:'Atual SI', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}},
+      {text:'Δ % PY', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}}
     ]];
     topClientes.forEach((r,i) => {
       const bg = i<3 ? 'F5F3FF' : BRANCO;
@@ -11048,8 +11104,8 @@ async function exportPPTX(){
     const rowsCSO = [[
       {text:'#', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'center'}},
       {text:'Cliente', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}}},
-      {text:'Atual', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}},
-      {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}}
+      {text:'Atual SO', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}},
+      {text:'Δ % PY', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}}
     ]];
 
     if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
@@ -11116,8 +11172,8 @@ async function exportPPTX(){
       const rowsSI = [[
         {text:'#', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'center'}},
         {text:'Produto', options:{bold:true, color:BRANCO, fill:{color:AZUL}}},
-        {text:'Atual', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}},
-        {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}}
+        {text:'Atual SI', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}},
+        {text:'Δ % PY', options:{bold:true, color:BRANCO, fill:{color:AZUL}, align:'right'}}
       ]];
       if(topProdutos.length === 0){
         rowsSI.push([{text:`Sem dados de sell-in para o canal ${canalNome}`, options:{colspan:4, fill:{color:'F8FAFC'}, color:CINZA, italic:true, align:'center', fontSize:10}}]);
@@ -11137,8 +11193,8 @@ async function exportPPTX(){
       const rowsSO = [[
         {text:'#', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'center'}},
         {text:'Produto', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}}},
-        {text:'Atual', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}},
-        {text:'Δ %', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}}
+        {text:'Atual SO', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}},
+        {text:'Δ % PY', options:{bold:true, color:BRANCO, fill:{color:'1E40AF'}, align:'right'}}
       ]];
       if(rawDataSellout && rawDataSellout.length > 0 && selloutUltimoPeriodo){
         // Agregar SO do canal manualmente (mesma janela do agregarSellout)
@@ -13020,28 +13076,30 @@ async function exportPPTX(){
         sDiagG.addText(k.sub, {x:xK+0.15, y:1.78, w:2.85, h:0.3, fontSize:8, italic:true, color:CINZA, fontFace:'Open Sans'});
       });
 
-      // Decomposição V×P×Mix (lado esquerdo)
-      sDiagG.addText('🔍 Decomposição V × P × Mix', {
+      // Leitura do Diagnóstico (lado esquerdo) — substitui a decomposição V×P×Mix (mantida só no HTML)
+      sDiagG.addText('Leitura do Diagnóstico', {
         x:0.3, y:2.3, w:6.3, h:0.3, fontSize:12, bold:true, color:AZUL, fontFace:'Open Sans'
       });
-      if(diag.totAbsDecomp > 0){
-        const efeitos = [
-          {l:'Volume', v:diag.dV, p:Math.abs(diag.dV)/diag.totAbsDecomp*100, cor:'10B981'},
-          {l:'Preço', v:diag.dP, p:Math.abs(diag.dP)/diag.totAbsDecomp*100, cor:'3B82F6'},
-          {l:'Mix', v:diag.dMix, p:Math.abs(diag.dMix)/diag.totAbsDecomp*100, cor:'A855F7'}
+      sDiagG.addShape(pptx.ShapeType.rect, {x:0.3, y:2.65, w:6.3, h:1.65, fill:{color:CINZA_CLARO}, line:{color:'E5E7EB', width:0.5}});
+      {
+        const unidVarG = diag.unidC ? ((diag.unidA-diag.unidC)/diag.unidC*100) : 0;
+        const sinalVol = Math.abs(unidVarG) >= Math.abs(diag.varPct)
+          ? 'volume puxa a retração (queda em unidades)'
+          : 'preço/mix amortece (valor cai menos que o volume)';
+        const totQuedaProd = (diag.topQuedasProd||[]).reduce((s,p)=>s+Math.abs(p.dAbs),0);
+        const top3ProdShare = diag.dAbs ? (totQuedaProd/Math.abs(diag.dAbs)*100) : 0;
+        const factsDiag = [
+          `Magnitude: ${diag.dAbs>=0?'+':''}${fmt(diag.dAbs)} ${mLabelG} (${diag.varPct>=0?'+':''}${diag.varPct.toFixed(1)}%) vs ano anterior`,
+          `Volume (UNID): ${unidVarG>=0?'+':''}${unidVarG.toFixed(1)}% · ${sinalVol}`,
+          `Concentração: Top 3 produtos em queda ≈ ${top3ProdShare.toFixed(0)}% da retração`,
+          diag.soInfo
+            ? `Sinal SI×SO: gap ${diag.soInfo.gap>=0?'+':''}${diag.soInfo.gap.toFixed(1)}pp ${Math.abs(diag.soInfo.gap)>5?'(descompasso — ver ao lado)':'(canal alinhado)'}`
+            : 'Sell-out não disponível para este grupo (n/d)'
         ];
-        efeitos.forEach((e, i) => {
-          const y = 2.65 + i*0.55;
-          sDiagG.addShape(pptx.ShapeType.rect, {x:0.3, y, w:6.3, h:0.45, fill:{color:CINZA_CLARO}, line:{color:'E5E7EB', width:0.5}});
-          sDiagG.addShape(pptx.ShapeType.rect, {x:0.3, y, w:0.1, h:0.45, fill:{color:e.cor}, line:{type:'none'}});
-          sDiagG.addText(e.l, {x:0.5, y:y+0.05, w:1.2, h:0.35, fontSize:11, bold:true, color:e.cor, fontFace:'Open Sans', valign:'middle'});
-          sDiagG.addText(`${e.v>=0?'+':''}${fmt(e.v)} ${mLabelG}`, {x:1.7, y:y+0.05, w:2.5, h:0.35, fontSize:10, bold:true, color:PRETO, fontFace:'Open Sans', valign:'middle'});
-          sDiagG.addText(`${e.p.toFixed(0)}% do efeito`, {x:4.3, y:y+0.05, w:2.2, h:0.35, fontSize:9, color:CINZA, fontFace:'Open Sans', valign:'middle', align:'right'});
-        });
-      } else {
-        sDiagG.addText('Decomposição requer dados de UNID e BRL.', {
-          x:0.3, y:2.7, w:6.3, h:0.4, fontSize:10, italic:true, color:CINZA, fontFace:'Open Sans'
-        });
+        sDiagG.addText(
+          factsDiag.map(t=>({text:t, options:{bullet:{indent:0.15}, fontSize:10.5, color:'1E3A5F', paraSpaceAfter:7, breakLine:true}})),
+          {x:0.5, y:2.78, w:6.0, h:1.45, valign:'top'}
+        );
       }
 
       // SI×SO (lado direito)
