@@ -10451,18 +10451,20 @@ async function exportPPTX(){
       }
 
       // 7. Ações relacionadas (do plano de ação) + foco — igual ao HTML
-      if(window.__planoAcaoResultado){
-        const pa = window.__planoAcaoResultado;
-        const naFr = (arr) => (arr||[]).filter(a => (a.franquia||'') === nomeFranquia);
-        const crit = naFr(pa.criticos), aten = naFr(pa.atencao), oport = naFr(pa.oportunidades);
-        const partes = [];
-        if(crit.length) partes.push(`${crit.length} crítico${crit.length>1?'s':''}`);
-        if(aten.length) partes.push(`${aten.length} atenção`);
-        if(oport.length) partes.push(`${oport.length} oportunidade${oport.length>1?'s':''}`);
-        if(partes.length) bullets.push({lvl:1, txt:`Ações: ${partes.join(' · ')}`});
-        const foco = crit[0] || aten[0] || oport[0];
-        if(foco && foco.nome) bullets.push({lvl:1, txt:`Foco: ${foco.nome}`});
-      }
+      try {
+        if(window.__planoAcaoResultado){
+          const pa = window.__planoAcaoResultado;
+          const naFr = (arr) => (Array.isArray(arr)?arr:[]).filter(a => a && (a.franquia||'') === nomeFranquia);
+          const crit = naFr(pa.criticos), aten = naFr(pa.atencao), oport = naFr(pa.oportunidades);
+          const partes = [];
+          if(crit.length) partes.push(`${crit.length} crítico${crit.length>1?'s':''}`);
+          if(aten.length) partes.push(`${aten.length} atenção`);
+          if(oport.length) partes.push(`${oport.length} oportunidade${oport.length>1?'s':''}`);
+          if(partes.length) bullets.push({lvl:1, txt:`Ações: ${partes.join(' · ')}`});
+          const foco = crit[0] || aten[0] || oport[0];
+          if(foco && foco.nome) bullets.push({lvl:1, txt:`Foco: ${foco.nome}`});
+        }
+      } catch(eAc){ /* ações são opcionais; nunca quebrar o insight */ }
 
       return bullets;
     }
@@ -10484,6 +10486,7 @@ async function exportPPTX(){
       // ===== GERAL (consolidado do grupo) → objeto p/ a faixa de destaque =====
       let geral = null;
       if(incluirGeral){
+        try {
         const baseGrupo = base.filter(r => franquiasValidas.includes(String(r[COLS.FRANQUIA])));
         const unidA = somarMetricaFrS3(baseGrupo, per.periodoAtual, COLS.VALOR_UNID);
         const unidC = somarMetricaFrS3(baseGrupo, per.periodoComp, COLS.VALOR_UNID);
@@ -10508,20 +10511,27 @@ async function exportPPTX(){
         const concG = totalCliG > 0 ? (valoresCliG.slice(0,5).reduce((s,v)=>s+v,0)/totalCliG*100) : 0;
         const soG = (typeof calcularSOFranquiaMulti === 'function') ? calcularSOFranquiaMulti(franquiasValidas) : null;
         geral = {varPct, unidV, brlV, valA, concG, soVar: soG?soG.soVar:null};
+        } catch(eG){ geral = null; }
       }
 
       // ===== Blocos por franquia (cada um vira um cartão) =====
       const franquiaBlocks = [];
       franquiasValidas.forEach(fr => {
-        const bl = analisarFranquiaDetalhado(fr);
-        if(bl && bl.length){
-          const head = bl[0].txt || '';
-          const arrow = head.includes('▲') ? '▲' : (head.includes('▼') ? '▼' : '●');
-          const cor = arrow==='▲'?VERDE:(arrow==='▼'?VERMELHO:CINZA_T);
-          const resumo = (head.split(':').slice(1).join(':') || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim();
-          const detalhes = bl.slice(1).map(b => (b.txt||'').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim())
-                             .filter(t => t && !/:\s*$/.test(t) && !/:\s*(n\/d|—|-)\s*$/i.test(t) && t.length>3);
-          franquiaBlocks.push({nome: fr, resumo, cor, detalhes});
+        try {
+          const bl = analisarFranquiaDetalhado(fr);
+          if(bl && bl.length){
+            const head = bl[0].txt || '';
+            const arrow = head.includes('▲') ? '▲' : (head.includes('▼') ? '▼' : '●');
+            const cor = arrow==='▲'?VERDE:(arrow==='▼'?VERMELHO:CINZA_T);
+            const resumoBase = (head.split(':').slice(1).join(':') || '').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim();
+            const resumo = resumoBase ? `${resumoBase} · SI vs PY` : '';
+            const detalhes = bl.slice(1).map(b => (b.txt||'').replace(/[🌍🔬🏭🏪📦🎯💡]/g,'').trim())
+                               .filter(t => t && !/:\s*$/.test(t) && !/:\s*(n\/d|—|-)\s*$/i.test(t) && t.length>3);
+            franquiaBlocks.push({nome: fr, resumo, cor, detalhes});
+          }
+        } catch(eFr){
+          // se a análise de uma franquia falhar, ainda mostra o cartão básico
+          franquiaBlocks.push({nome: fr, resumo: '', cor: CINZA_T, detalhes: []});
         }
       });
 
@@ -10534,7 +10544,7 @@ async function exportPPTX(){
         s.addShape('rect', {x:0.4, y:yCursor, w:0.12, h:hHero, fill:{color:AZUL}});
         s.addText('GERAL CONSOLIDADO', {x:0.68, y:yCursor+0.12, w:4, h:0.28, fontSize:11, bold:true, color:AZUL, charSpacing:1});
         s.addText(`${setaVar(geral.varPct)} ${geral.varPct>=0?'+':''}${geral.varPct.toFixed(1)}%`, {x:0.66, y:yCursor+0.44, w:3.9, h:0.62, fontSize:30, bold:true, color:corVar(geral.varPct), valign:'middle'});
-        s.addText(`Sell-in vs PY · ${mLabel} · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.9, h:0.28, fontSize:9.5, color:CINZA_T});
+        s.addText(`Impacto: Sell-in (SI) vs PY · ${fmt(geral.valA)}`, {x:0.68, y:yCursor+1.10, w:3.95, h:0.28, fontSize:9.5, color:AZUL, bold:true});
         // chips à direita
         const chips = [
           {lbl:'UNIDADES', val:`${geral.unidV>=0?'+':''}${geral.unidV.toFixed(1)}%`, cor:corVar(geral.unidV)},

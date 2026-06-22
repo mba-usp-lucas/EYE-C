@@ -1,28 +1,25 @@
-# v10.5 - Insight com mais detalhes + divisão de grupos corrigida
+# v10.6 - Correção dos insights em branco + SI vs PY visível
 
-## Insight por franquia: mais detalhes (igual ao HTML)
-Cada cartão de franquia agora traz, conforme o espaço:
-- Driver (volume vs preço/mix)
-- SI × SO (gap e leitura, ou n/d)
-- Top produtos (top 3 com variação)
-- Movers (maior alavanca + maior ofensor)
-- Top clientes (com % de concentração)
-- Ações (críticos/atenção/oportunidades) + Foco (item principal) — do Plano de Ação
-Os cartões crescem quando há poucas franquias no grupo (1-2), mostrando tudo;
-com muitas franquias, mostram os principais e ficam em 2 colunas.
+## Insights em branco — CORRIGIDO
+Causa: no bloco de "Ações" (novo), se algum item do plano de ação vinha nulo,
+o acesso a item.franquia lançava exceção e o slide de insight inteiro ficava
+em branco (só o banner). Correções:
+- Guardas a && Array.isArray() no bloco de Ações
+- try/catch no cálculo do GERAL, na análise por franquia e nas Ações
+  → se qualquer parte falhar, o insight ainda renderiza (nunca fica em branco)
 
-## Divisão dos grupos de Insight (corrigida)
-- Grupo 1: DE&OH + CLC
-- Grupo 2: Glaucoma + Pós-Op & Patanol S
-- Grupo 3: CL
-(Antes "CL" exato não caía no grupo 3; agora cai corretamente.)
+## "SI vs PY" agora bem visível nos insights
+Aparece em 3 lugares em cada slide de insight:
+- Faixa GERAL: "Impacto: Sell-in (SI) vs PY" (azul, negrito)
+- Cabeçalho de cada cartão de franquia: "... · SI vs PY"
+- Rodapé: "impacto em Sell-in (SI) vs ano anterior (PY)"
 
-## Mantido das versões anteriores
-- V×P×Mix fora da recuperação (Leitura do Diagnóstico no lugar)
-- Insight com "Sell-in vs PY" explícito · Top 15 com Atual SI/SO e Δ % PY
-- Slide Detalhamento SI×SO por franquia · Systane Unidades→Reais
-- Gráficos com caminho relativo · sem slides-fantasma · sem imagens vazias
+## Mantido
+- Insight por franquia com detalhe completo (Driver, SI×SO, Top produtos,
+  Movers, Top clientes, Ações/Foco) · grupos 1=DE&OH+CLC, 2=Glaucoma+Patanol, 3=CL
+- V×P×Mix fora da recuperação · Top 15 com Atual SI/SO e Δ% PY ·
+  Detalhamento SI×SO · Systane Unidades→Reais · sem slides-fantasma
 
 ## Validação
-- 45 slides · 0 caminhos absolutos · 0 imagens 0-byte · nenhum slide sem banner
-- Grupos: 1=DE&OH+CLC, 2=Glaucoma+Patanol, 3=CL (testado)
+- 45 slides · 0 absolutos · 0 imagens 0-byte · nenhum sem banner
+- Todos os insights com conteúdo (não-brancos) · SI vs PY em 3 pontos
