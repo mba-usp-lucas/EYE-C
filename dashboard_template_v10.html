@@ -731,6 +731,7 @@ window.addEventListener('DOMContentLoaded', function(){
     <button type="button" class="nav-link" onclick="scrollToSection('chartYoYCard')">Evolução</button>
     <button type="button" class="nav-link" onclick="scrollToSection('chartDifferenceCard')">Evolução SIxSO</button>
     <button type="button" class="nav-link" onclick="scrollToSection('targetsCard')">Targets</button>
+    <button type="button" class="nav-link" onclick="scrollToSection('historicoSkuCard')">Hist. SKU</button>
     <button type="button" class="nav-link" onclick="scrollToSection('tab-clientes')">Top 15</button>
     <button type="button" class="nav-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑ Topo</button>
   </nav>
@@ -901,6 +902,22 @@ window.addEventListener('DOMContentLoaded', function(){
       </div>
     </div>
   </div>
+
+  <!-- ============ CARD HISTÓRICO POR SKU (SI × SO × Target) ============ -->
+  <div class="card collapsible" id="historicoSkuCard" style="display:none">
+    <h3 onclick="toggleSection('historicoSkuCard')">Histórico por SKU · Sell-in × Sell-out × Target
+      <span class="metric-label" id="historicoSkuMetricLabel"></span>
+      <button type="button" onclick="event.stopPropagation(); exportHistoricoSKU();" style="margin-left:auto;font-size:11px;font-weight:700;background:#10B981;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer" title="Exporta o histórico completo mês a mês (3 anos) em Excel">↓ Excel (mês a mês, 3 anos)</button>
+      <span class="toggle-icon">▼</span>
+    </h3>
+    <div class="collapsible-body">
+      <div style="font-size:12px;color:#64748b;margin:2px 0 10px">Resumo por SKU no ano corrente. <b>YTGO</b> = Target 2026 − Realizado (Sell-in YTD). O histórico mensal completo (sell-out e sell-in, 3 anos) está no botão <b>Excel</b>.</div>
+      <div style="overflow-x:auto">
+        <table class="resumo-table" id="historicoSkuTabela" style="font-size:12px"></table>
+      </div>
+    </div>
+  </div>
+  <!-- ============ FIM CARD HISTÓRICO SKU ============ -->
 
   <div class="card collapsible" id="chartYoYCard">
     <h3 onclick="toggleSection('chartYoYCard')">Evolução Mensal — Ano Atual vs. Anterior <span class="metric-label" id="metricLabel1"></span> <span class="toggle-icon">▼</span></h3>
@@ -1885,15 +1902,29 @@ function renderMesesBox(){
 // ============================================================
 function scrollToSection(id){
   const el = document.getElementById(id);
-  if(!el) return;
+  if(!el){ console.warn('scrollToSection: id não encontrado:', id); return; }
   // Se for um card colapsável fechado, abrir antes de rolar
   const card = el.classList.contains('collapsible') ? el : el.closest('.collapsible');
-  if(card && card.classList.contains('collapsed')){
+  if(card){
     card.classList.remove('collapsed');
+    if(card.style.display === 'none') card.style.display = '';  // mostrar se estava oculto
   }
-  // Scroll com offset para o menu sticky não cobrir
-  const y = el.getBoundingClientRect().top + window.pageYOffset - 70;
-  window.scrollTo({top: y, behavior: 'smooth'});
+  if(el.style && el.style.display === 'none') el.style.display = '';
+  // Esperar o layout e rolar (com fallbacks p/ navegadores antigos)
+  setTimeout(function(){
+    try{
+      const topo = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - 70;
+      if('scrollBehavior' in document.documentElement.style && window.scrollTo){
+        window.scrollTo({top: topo, behavior: 'smooth'});
+      } else if(window.scrollTo){
+        window.scrollTo(0, topo);
+      } else {
+        el.scrollIntoView(true);
+      }
+    }catch(e){
+      try{ el.scrollIntoView(true); }catch(_){}
+    }
+  }, 40);
 }
 
 // ============================================================
@@ -2475,6 +2506,7 @@ function renderizarTudo(){
   renderBenchmark(per);
   renderTargets(base, per);
   renderTargetsFinanceiros(base, per);
+  renderHistoricoSKU(base, per);
   renderChartYoY(base, per);
   renderChartSellout(per);
   renderChartDifference();   // SI vs SO últimos 12 meses (ignora período)
@@ -3055,6 +3087,74 @@ function exportHistoricoSKU(){
   XLSX.utils.book_append_sheet(wb, ws, aba.substring(0,31));
   const hoje = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `Historico_SKU_SI_SO_Target_${M}_${hoje}.xlsx`);
+}
+
+// Renderiza o resumo por SKU no HTML (Sell-out, Sell-in, Target 2026, YTGO, Atingimento)
+function renderHistoricoSKU(data, per){
+  const card = document.getElementById('historicoSkuCard');
+  const tab = document.getElementById('historicoSkuTabela');
+  if(!card || !tab) return;
+  const M = (metricaAtual === 'BRL') ? 'BRL' : 'UNID';
+  const siField = (M==='BRL') ? COLS.VALOR_BRL : COLS.VALOR_UNID;
+  const soField = (M==='BRL') ? 'BRL' : 'UNID';
+  const tgtField = (M==='BRL') ? 'target_brl' : 'target_unid';
+  const lbl = document.getElementById('historicoSkuMetricLabel');
+  if(lbl) lbl.textContent = (M==='BRL' ? '(R$)' : '(Unidades)');
+
+  const ANO_ATUAL = 2026;
+  const keyOf = (fr, prod) => `${String(fr||'').toUpperCase().trim()}||${normalizarNomeProduto(prod)}`;
+  const info = {}, si = {}, so = {}, tgt = {};
+
+  (rawData||[]).forEach(r => {
+    if(+r[COLS.ANO] !== ANO_ATUAL) return;
+    const prod = r[COLS.PRODUTO]; if(!prod) return;
+    const k = keyOf(r[COLS.FRANQUIA], prod);
+    if(!info[k]) info[k] = {franquia:r[COLS.FRANQUIA]||'—', produto:prod};
+    si[k] = (si[k]||0) + (+r[siField]||0);
+  });
+  forEachSellout(r => {
+    if(+r.ANO !== ANO_ATUAL) return;
+    const prod = r.PRODUTO; if(!prod) return;
+    const k = keyOf(r.FRANQUIA, prod);
+    if(!info[k]) info[k] = {franquia:r.FRANQUIA||'—', produto:prod};
+    so[k] = (so[k]||0) + (+r[soField]||0);
+  });
+  (targetsFinanceiros||[]).forEach(t => {
+    if(+t.ano !== ANO_ATUAL) return;
+    const k = keyOf(t.franquia, t.produto);
+    if(!info[k]) info[k] = {franquia:t.franquia||'—', produto:t.produto};
+    tgt[k] = (tgt[k]||0) + (+t[tgtField]||0);
+  });
+
+  const keys = Object.keys(info);
+  if(keys.length === 0){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  keys.sort((a,b) => (info[a].franquia||'').localeCompare(info[b].franquia||'') || ((si[b]||0)-(si[a]||0)));
+
+  const fmtN = (v) => (v==null||v===0) ? '—' : (M==='BRL' ? 'R$ '+Math.round(v).toLocaleString('pt-BR') : Math.round(v).toLocaleString('pt-BR'));
+  let html = '<thead><tr>'+
+    '<th style="text-align:left">Franquia</th><th style="text-align:left">Produto</th>'+
+    '<th style="text-align:right">Sell-out 2026</th><th style="text-align:right">Sell-in 2026</th>'+
+    '<th style="text-align:right">Target 2026</th><th style="text-align:right">YTGO</th><th style="text-align:center">Ating.</th>'+
+    '</tr></thead><tbody>';
+  keys.forEach(k => {
+    const soV = so[k]||0, siV = si[k]||0, tg = tgt[k]||0;
+    const ytgo = tg ? (tg - siV) : null;
+    const at = tg ? (siV/tg) : null;
+    let atCor = '#64748b';
+    if(at!=null) atCor = at>=1 ? '#10B981' : (at>=0.8 ? '#92600A' : '#EF4444');
+    html += '<tr>'+
+      '<td style="text-align:left;font-weight:600">'+info[k].franquia+'</td>'+
+      '<td style="text-align:left">'+info[k].produto+'</td>'+
+      '<td style="text-align:right">'+fmtN(soV)+'</td>'+
+      '<td style="text-align:right">'+fmtN(siV)+'</td>'+
+      '<td style="text-align:right">'+(tg?fmtN(tg):'—')+'</td>'+
+      '<td style="text-align:right">'+(ytgo!=null?fmtN(ytgo):'—')+'</td>'+
+      '<td style="text-align:center;font-weight:700;color:'+atCor+'">'+(at!=null?(at*100).toFixed(0)+'%':'—')+'</td>'+
+      '</tr>';
+  });
+  html += '</tbody>';
+  tab.innerHTML = html;
 }
 
 // Helper de arredondamento pra 2 casas
@@ -9393,7 +9493,7 @@ async function exportPPTX(){
       slide.addText([
         {text:'Business Use Only', options:{bold:true, color:'5B6B7E'}},
         {text:'·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}},
-        {text:'   · v10.9 nav-fix', options:{color:'C7D2DE'}}
+        {text:'   · v10.10 hist-sku', options:{color:'C7D2DE'}}
       ], {
         x:4.6, y:7.12, w:8.43, h:0.3,
         fontSize:9, fontFace:'Arial', align:'right'

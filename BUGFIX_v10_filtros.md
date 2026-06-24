@@ -1,23 +1,27 @@
-# v10.9 - Correções na barra de menu (navegação por hiperlinks)
+# v10.10 - Hiperlinks robustos + Histórico SKU VISÍVEL no HTML
 
-## 1) Link "Targets" não funcionava — CORRIGIDO
-O card "Status de Targets" começava com display:none e a função renderTargets só
-voltava a escondê-lo (nunca o reexibia). Resultado: o card ficava sempre oculto e
-o link do menu não tinha onde rolar. Agora, quando há targets carregados, o card
-é exibido (card.style.display=''), e o link passa a funcionar.
+## CONFIRA O BUILD: rodapé dos slides mostra "v10.10 hist-sku"
+Se não mostrar, você está num build antigo (cache). Refaça: trocar HTML →
+rodar sales_dashboard_v10.py → abrir HTML → Ctrl+Shift+R.
 
-## 2) Renomeados itens do menu
-- "SI × SO"  → "Comp. SI x SO"  (card Análise Comparativa Sell-in × Sell-out)
-- "SI vs SO" → "Evolução SIxSO" (card do gráfico de diferença SI vs SO)
+## 1) Hiperlinks do menu — agora robustos
+A função scrollToSection foi reforçada:
+- Se o card de destino estiver oculto (display:none), ele é exibido antes de rolar.
+- Fallback para navegadores corporativos antigos (sem rolagem suave): usa
+  window.scrollTo(0,y) e, em último caso, scrollIntoView.
+- Pequeno atraso para o layout assentar antes de rolar.
+Com isso todos os links do menu passam a funcionar, inclusive Targets e o novo Hist. SKU.
+
+## 2) Histórico por SKU agora aparece NO HTML (não era só export)
+Novo card "Histórico por SKU · Sell-in × Sell-out × Target" (entre Targets e Evolução),
+com link "Hist. SKU" no menu. Mostra uma tabela por SKU:
+- Franquia, Produto
+- Sell-out 2026, Sell-in 2026 (ano corrente)
+- Target 2026, YTGO (Target − Sell-in), Atingimento % (com cores)
+O botão verde "Excel (mês a mês, 3 anos)" no cabeçalho do card exporta o histórico
+mensal completo (sell-out e sell-in dos últimos 3 anos) — a tabelona.
+O sell-out casa com sell-in/target pelo nome normalizado (ignora sufixos tipo "(NVR)").
 
 ## Observação
-Os outros cards condicionais (Comp. SI x SO e Evolução SIxSO) já exibiam
-corretamente (display:'block' quando há sell-out) — só o Targets tinha o bug.
-
-## Marcador de versão
-Rodapé dos slides agora mostra "v10.9 nav-fix" (para confirmar o build novo).
-
-## Lembrete (sempre que trocar o template)
-1. Substituir o dashboard_template_v10.html
-2. Rodar de novo o sales_dashboard_v10.py
-3. Abrir o HTML e Ctrl+Shift+R (hard refresh)
+A tabela no HTML é o RESUMO do ano (cabe na tela). O detalhe mês a mês de 3 anos
+fica no Excel (são 70+ colunas, inviável na tela).
