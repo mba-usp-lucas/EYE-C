@@ -731,7 +731,6 @@ window.addEventListener('DOMContentLoaded', function(){
     <button type="button" class="nav-link" onclick="scrollToSection('chartYoYCard')">Evolução</button>
     <button type="button" class="nav-link" onclick="scrollToSection('chartDifferenceCard')">Evolução SIxSO</button>
     <button type="button" class="nav-link" onclick="scrollToSection('targetsCard')">Targets</button>
-    <button type="button" class="nav-link" onclick="scrollToSection('historicoSkuCard')">Hist. SKU</button>
     <button type="button" class="nav-link" onclick="scrollToSection('tab-clientes')">Top 15</button>
     <button type="button" class="nav-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑ Topo</button>
   </nav>
@@ -902,22 +901,6 @@ window.addEventListener('DOMContentLoaded', function(){
       </div>
     </div>
   </div>
-
-  <!-- ============ CARD HISTÓRICO POR SKU (SI × SO × Target) ============ -->
-  <div class="card collapsible" id="historicoSkuCard" style="display:none">
-    <h3 onclick="toggleSection('historicoSkuCard')">Histórico por SKU · Sell-in × Sell-out × Target
-      <span class="metric-label" id="historicoSkuMetricLabel"></span>
-      <button type="button" onclick="event.stopPropagation(); exportHistoricoSKU();" style="margin-left:auto;font-size:11px;font-weight:700;background:#10B981;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer" title="Exporta o histórico completo mês a mês (3 anos) em Excel">↓ Excel (mês a mês, 3 anos)</button>
-      <span class="toggle-icon">▼</span>
-    </h3>
-    <div class="collapsible-body">
-      <div style="font-size:12px;color:#64748b;margin:2px 0 10px">Resumo por SKU no ano corrente. <b>YTGO</b> = Target 2026 − Realizado (Sell-in YTD). O histórico mensal completo (sell-out e sell-in, 3 anos) está no botão <b>Excel</b>.</div>
-      <div style="overflow-x:auto">
-        <table class="resumo-table" id="historicoSkuTabela" style="font-size:12px"></table>
-      </div>
-    </div>
-  </div>
-  <!-- ============ FIM CARD HISTÓRICO SKU ============ -->
 
   <div class="card collapsible" id="chartYoYCard">
     <h3 onclick="toggleSection('chartYoYCard')">Evolução Mensal — Ano Atual vs. Anterior <span class="metric-label" id="metricLabel1"></span> <span class="toggle-icon">▼</span></h3>
@@ -2506,7 +2489,6 @@ function renderizarTudo(){
   renderBenchmark(per);
   renderTargets(base, per);
   renderTargetsFinanceiros(base, per);
-  renderHistoricoSKU(base, per);
   renderChartYoY(base, per);
   renderChartSellout(per);
   renderChartDifference();   // SI vs SO últimos 12 meses (ignora período)
@@ -3005,54 +2987,65 @@ function exportHistoricoSKU(){
   const soField = (M==='BRL') ? 'BRL' : 'UNID';
   const tgtField = (M==='BRL') ? 'target_brl' : 'target_unid';
 
-  // Anos: últimos 3 presentes em SI + SO + targets (garante 2026 se houver)
+  // Anos: últimos 3 presentes em SI + SO (garante histórico). Targets podem ter anos próprios.
   const anosSet = new Set();
   rawData.forEach(r => anosSet.add(+r[COLS.ANO]));
   (rawDataSellout||[]).forEach(r => anosSet.add(+r.ANO));
-  (targetsFinanceiros||[]).forEach(t => anosSet.add(+t.ano));
   const anos3 = [...anosSet].filter(a => a && !isNaN(a)).sort((a,b)=>a-b).slice(-3);
+  // Anos com target (para as colunas de target mês a mês)
+  const anosTgtSet = new Set();
+  (targetsFinanceiros||[]).forEach(t => anosTgtSet.add(+t.ano));
+  const anosTgt = [...anosTgtSet].filter(a => a && !isNaN(a)).sort((a,b)=>a-b);
+  const anoTgtPrinc = anosTgt.length ? anosTgt[anosTgt.length-1] : 2026;
 
   const mAb = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  const mesesCols = [];
-  anos3.forEach(ano => { for(let m=1;m<=12;m++) mesesCols.push({ano, mes:m, key:`${ano}-${m}`, lbl:`${mAb[m]}/${String(ano).slice(2)}`}); });
+  const mkCols = (anos) => { const a=[]; anos.forEach(ano=>{for(let m=1;m<=12;m++)a.push({ano,mes:m,key:`${ano}-${m}`,lbl:`${mAb[m]}/${String(ano).slice(2)}`});}); return a; };
+  const mesesCols = mkCols(anos3);     // SO e SI
+  const tgCols    = mkCols(anosTgt);   // Target mês a mês
 
-  // Chave: franquia (upper) + produto normalizado (casa SO x SI x target)
-  const keyOf = (fr, prod) => `${String(fr||'').toUpperCase().trim()}||${normalizarNomeProduto(prod)}`;
-  const info = {}, siM = {}, soM = {}, tgt = {};
+  // CHAVE = só produto normalizado. Franquia vem do SELL-IN (fonte oficial),
+  // assim sell-out/target nunca colocam um produto na franquia errada.
+  const norm = (p) => normalizarNomeProduto(p);
+  const info = {}, siM = {}, soM = {}, tgM = {}, tgt = {};
 
-  // Sell-in
+  // Sell-in = MASTER (define franquia e nome do produto)
   rawData.forEach(r => {
     const prod = r[COLS.PRODUTO]; if(!prod) return;
-    const fr = r[COLS.FRANQUIA];
-    const k = keyOf(fr, prod);
-    if(!info[k]) info[k] = {franquia: fr||'—', produto: prod};
+    const k = norm(prod);
+    if(!info[k]) info[k] = {franquia: r[COLS.FRANQUIA]||'—', produto: prod, _si:true};
+    else { info[k].franquia = r[COLS.FRANQUIA] || info[k].franquia; info[k]._si = true; }
     if(!siM[k]) siM[k] = {};
     const am = `${+r[COLS.ANO]}-${+r[COLS.MES_NUM]}`;
     siM[k][am] = (siM[k][am]||0) + (+r[siField] || 0);
   });
-  // Sell-out (respeita filtro de canal do dashboard)
+  // Targets — franquia só se o produto NÃO veio do sell-in
+  (targetsFinanceiros||[]).forEach(t => {
+    const prod = t.produto; if(!prod) return;
+    const k = norm(prod);
+    if(!info[k]) info[k] = {franquia: t.franquia||'—', produto: prod};
+    else if(!info[k]._si && (info[k].franquia==='—' || !info[k].franquia)) info[k].franquia = t.franquia || info[k].franquia;
+    const v = +t[tgtField] || 0;
+    if(!tgM[k]) tgM[k] = {};
+    const am = `${+t.ano}-${+t.mes}`;
+    tgM[k][am] = (tgM[k][am]||0) + v;
+    if(+t.ano === anoTgtPrinc) tgt[k] = (tgt[k]||0) + v;
+  });
+  // Sell-out — NUNCA altera a franquia; só cria linha se o produto for novo
   forEachSellout(r => {
     const prod = r.PRODUTO; if(!prod) return;
-    const fr = r.FRANQUIA;
-    const k = keyOf(fr, prod);
-    if(!info[k]) info[k] = {franquia: fr||'—', produto: prod};
+    const k = norm(prod);
+    if(!info[k]) info[k] = {franquia: r.FRANQUIA||'—', produto: prod};
     if(!soM[k]) soM[k] = {};
     const am = `${+r.ANO}-${+r.MES}`;
     soM[k][am] = (soM[k][am]||0) + (+r[soField] || 0);
-  });
-  // Targets 2026
-  (targetsFinanceiros||[]).forEach(t => {
-    if(+t.ano !== 2026) return;
-    const k = keyOf(t.franquia, t.produto);
-    if(!info[k]) info[k] = {franquia: t.franquia||'—', produto: t.produto};
-    tgt[k] = (tgt[k]||0) + (+t[tgtField] || 0);
   });
 
   // Cabeçalho
   const head = ['Franquia','Produto'];
   mesesCols.forEach(c => head.push(`SO ${c.lbl}`));
   mesesCols.forEach(c => head.push(`SI ${c.lbl}`));
-  head.push('Target 2026','Realizado SI 2026','YTGO (Saldo p/ Target)','Atingimento %');
+  tgCols.forEach(c => head.push(`TG ${c.lbl}`));
+  head.push(`Target ${anoTgtPrinc}`, `Realizado SI ${anoTgtPrinc}`, 'YTGO (Saldo p/ Target)', 'Atingimento %');
 
   const keys = Object.keys(info).sort((a,b) =>
     (info[a].franquia||'').localeCompare(info[b].franquia||'') ||
@@ -3061,13 +3054,14 @@ function exportHistoricoSKU(){
   const aoa = [head];
   keys.forEach(k => {
     const row = [info[k].franquia, info[k].produto];
-    mesesCols.forEach(c => { const v = soM[k] && soM[k][c.key]; row.push(v!==undefined && v!==null && v!==0 ? Math.round(v) : (soM[k]&&soM[k][c.key]===0?0:'')); });
+    mesesCols.forEach(c => { const v = soM[k] && soM[k][c.key]; row.push(v!==undefined && v!==null ? Math.round(v) : ''); });
     mesesCols.forEach(c => { const v = siM[k] && siM[k][c.key]; row.push(v!==undefined && v!==null ? Math.round(v) : ''); });
-    const target2026 = tgt[k] || 0;
-    let realiz = 0; if(siM[k]) for(let m=1;m<=12;m++){ const v = siM[k][`2026-${m}`]; if(v!==undefined) realiz += v; }
-    const ytgo = target2026 - realiz;
-    const atng = target2026 ? (realiz/target2026*100) : '';
-    row.push(target2026?Math.round(target2026):'', Math.round(realiz), Math.round(ytgo), atng!==''?+atng.toFixed(1):'');
+    tgCols.forEach(c => { const v = tgM[k] && tgM[k][c.key]; row.push(v!==undefined && v!==null ? Math.round(v) : ''); });
+    const targetTot = tgt[k] || 0;
+    let realiz = 0; if(siM[k]) for(let m=1;m<=12;m++){ const v = siM[k][`${anoTgtPrinc}-${m}`]; if(v!==undefined) realiz += v; }
+    const ytgo = targetTot - realiz;
+    const atng = targetTot ? (realiz/targetTot*100) : '';
+    row.push(targetTot?Math.round(targetTot):'', Math.round(realiz), Math.round(ytgo), atng!==''?+atng.toFixed(1):'');
     aoa.push(row);
   });
 
@@ -3078,6 +3072,7 @@ function exportHistoricoSKU(){
   const colsW = [{wch:20},{wch:34}];
   mesesCols.forEach(()=>colsW.push({wch:9}));
   mesesCols.forEach(()=>colsW.push({wch:9}));
+  tgCols.forEach(()=>colsW.push({wch:9}));
   colsW.push({wch:14},{wch:16},{wch:18},{wch:14});
   ws['!cols'] = colsW;
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:aoa.length-1, c:head.length-1}}) };
@@ -3087,74 +3082,6 @@ function exportHistoricoSKU(){
   XLSX.utils.book_append_sheet(wb, ws, aba.substring(0,31));
   const hoje = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `Historico_SKU_SI_SO_Target_${M}_${hoje}.xlsx`);
-}
-
-// Renderiza o resumo por SKU no HTML (Sell-out, Sell-in, Target 2026, YTGO, Atingimento)
-function renderHistoricoSKU(data, per){
-  const card = document.getElementById('historicoSkuCard');
-  const tab = document.getElementById('historicoSkuTabela');
-  if(!card || !tab) return;
-  const M = (metricaAtual === 'BRL') ? 'BRL' : 'UNID';
-  const siField = (M==='BRL') ? COLS.VALOR_BRL : COLS.VALOR_UNID;
-  const soField = (M==='BRL') ? 'BRL' : 'UNID';
-  const tgtField = (M==='BRL') ? 'target_brl' : 'target_unid';
-  const lbl = document.getElementById('historicoSkuMetricLabel');
-  if(lbl) lbl.textContent = (M==='BRL' ? '(R$)' : '(Unidades)');
-
-  const ANO_ATUAL = 2026;
-  const keyOf = (fr, prod) => `${String(fr||'').toUpperCase().trim()}||${normalizarNomeProduto(prod)}`;
-  const info = {}, si = {}, so = {}, tgt = {};
-
-  (rawData||[]).forEach(r => {
-    if(+r[COLS.ANO] !== ANO_ATUAL) return;
-    const prod = r[COLS.PRODUTO]; if(!prod) return;
-    const k = keyOf(r[COLS.FRANQUIA], prod);
-    if(!info[k]) info[k] = {franquia:r[COLS.FRANQUIA]||'—', produto:prod};
-    si[k] = (si[k]||0) + (+r[siField]||0);
-  });
-  forEachSellout(r => {
-    if(+r.ANO !== ANO_ATUAL) return;
-    const prod = r.PRODUTO; if(!prod) return;
-    const k = keyOf(r.FRANQUIA, prod);
-    if(!info[k]) info[k] = {franquia:r.FRANQUIA||'—', produto:prod};
-    so[k] = (so[k]||0) + (+r[soField]||0);
-  });
-  (targetsFinanceiros||[]).forEach(t => {
-    if(+t.ano !== ANO_ATUAL) return;
-    const k = keyOf(t.franquia, t.produto);
-    if(!info[k]) info[k] = {franquia:t.franquia||'—', produto:t.produto};
-    tgt[k] = (tgt[k]||0) + (+t[tgtField]||0);
-  });
-
-  const keys = Object.keys(info);
-  if(keys.length === 0){ card.style.display = 'none'; return; }
-  card.style.display = '';
-  keys.sort((a,b) => (info[a].franquia||'').localeCompare(info[b].franquia||'') || ((si[b]||0)-(si[a]||0)));
-
-  const fmtN = (v) => (v==null||v===0) ? '—' : (M==='BRL' ? 'R$ '+Math.round(v).toLocaleString('pt-BR') : Math.round(v).toLocaleString('pt-BR'));
-  let html = '<thead><tr>'+
-    '<th style="text-align:left">Franquia</th><th style="text-align:left">Produto</th>'+
-    '<th style="text-align:right">Sell-out 2026</th><th style="text-align:right">Sell-in 2026</th>'+
-    '<th style="text-align:right">Target 2026</th><th style="text-align:right">YTGO</th><th style="text-align:center">Ating.</th>'+
-    '</tr></thead><tbody>';
-  keys.forEach(k => {
-    const soV = so[k]||0, siV = si[k]||0, tg = tgt[k]||0;
-    const ytgo = tg ? (tg - siV) : null;
-    const at = tg ? (siV/tg) : null;
-    let atCor = '#64748b';
-    if(at!=null) atCor = at>=1 ? '#10B981' : (at>=0.8 ? '#92600A' : '#EF4444');
-    html += '<tr>'+
-      '<td style="text-align:left;font-weight:600">'+info[k].franquia+'</td>'+
-      '<td style="text-align:left">'+info[k].produto+'</td>'+
-      '<td style="text-align:right">'+fmtN(soV)+'</td>'+
-      '<td style="text-align:right">'+fmtN(siV)+'</td>'+
-      '<td style="text-align:right">'+(tg?fmtN(tg):'—')+'</td>'+
-      '<td style="text-align:right">'+(ytgo!=null?fmtN(ytgo):'—')+'</td>'+
-      '<td style="text-align:center;font-weight:700;color:'+atCor+'">'+(at!=null?(at*100).toFixed(0)+'%':'—')+'</td>'+
-      '</tr>';
-  });
-  html += '</tbody>';
-  tab.innerHTML = html;
 }
 
 // Helper de arredondamento pra 2 casas
@@ -9493,7 +9420,7 @@ async function exportPPTX(){
       slide.addText([
         {text:'Business Use Only', options:{bold:true, color:'5B6B7E'}},
         {text:'·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}},
-        {text:'   · v10.10 hist-sku', options:{color:'C7D2DE'}}
+        {text:'   · v10.11 sku-fix', options:{color:'C7D2DE'}}
       ], {
         x:4.6, y:7.12, w:8.43, h:0.3,
         fontSize:9, fontFace:'Arial', align:'right'

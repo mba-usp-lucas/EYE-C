@@ -1,27 +1,24 @@
-# v10.10 - Hiperlinks robustos + Histórico SKU VISÍVEL no HTML
+# v10.11 - Correções no Histórico SKU (rodapé: v10.11 sku-fix)
 
-## CONFIRA O BUILD: rodapé dos slides mostra "v10.10 hist-sku"
-Se não mostrar, você está num build antigo (cache). Refaça: trocar HTML →
-rodar sales_dashboard_v10.py → abrir HTML → Ctrl+Shift+R.
+## 1) Franquia errada por SKU — CORRIGIDO
+Antes a chave era franquia+produto, então se o sell-out (IQVIA) classificava um
+produto numa franquia diferente, criava linha errada (ex.: "Pós-Op + SYSTANE").
+Agora a chave é só o PRODUTO normalizado e a FRANQUIA vem do SELL-IN (fonte oficial):
+- Sell-in define franquia e nome do produto.
+- Target só define franquia se o produto não veio do sell-in.
+- Sell-out NUNCA muda a franquia (só soma o valor no produto certo).
+Resultado: SYSTANE aparece só em DE&OH; o sell-out dele entra na linha certa.
 
-## 1) Hiperlinks do menu — agora robustos
-A função scrollToSection foi reforçada:
-- Se o card de destino estiver oculto (display:none), ele é exibido antes de rolar.
-- Fallback para navegadores corporativos antigos (sem rolagem suave): usa
-  window.scrollTo(0,y) e, em último caso, scrollIntoView.
-- Pequeno atraso para o layout assentar antes de rolar.
-Com isso todos os links do menu passam a funcionar, inclusive Targets e o novo Hist. SKU.
+## 2) Target mês a mês — ADICIONADO
+O Excel agora traz colunas de Target mês a mês (TG jan/26 ... dez/26), além do
+Target total do ano, Realizado, YTGO e Atingimento. (Antes só tinha o total.)
+Estrutura: SO mês a mês (3 anos) · SI mês a mês (3 anos) · TG mês a mês · resumo.
 
-## 2) Histórico por SKU agora aparece NO HTML (não era só export)
-Novo card "Histórico por SKU · Sell-in × Sell-out × Target" (entre Targets e Evolução),
-com link "Hist. SKU" no menu. Mostra uma tabela por SKU:
-- Franquia, Produto
-- Sell-out 2026, Sell-in 2026 (ano corrente)
-- Target 2026, YTGO (Target − Sell-in), Atingimento % (com cores)
-O botão verde "Excel (mês a mês, 3 anos)" no cabeçalho do card exporta o histórico
-mensal completo (sell-out e sell-in dos últimos 3 anos) — a tabelona.
-O sell-out casa com sell-in/target pelo nome normalizado (ignora sufixos tipo "(NVR)").
+## 3) Card removido (já existe o de Targets Financeiros — Atingimento)
+Removi o card "Histórico por SKU" do HTML e o link "Hist. SKU" do menu, pois o
+atingimento por produto já está no card "Targets Financeiros — Atingimento" (4º card).
+O histórico SKU completo continua disponível pelo botão "Histórico SKU (Excel)"
+na barra de exportação (topo).
 
-## Observação
-A tabela no HTML é o RESUMO do ano (cabe na tela). O detalhe mês a mês de 3 anos
-fica no Excel (são 70+ colunas, inviável na tela).
+## Onde exportar
+Barra de exportação (topo) → botão "Histórico SKU (Excel)".
