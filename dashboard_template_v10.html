@@ -710,6 +710,7 @@ window.addEventListener('DOMContentLoaded', function(){
     <button class="btn btn-outline" onclick="resetFilters()">Limpar Filtros</button>
     <button class="btn btn-outline" onclick="expandirTodos()" title="Reabre todos os cards e limpa preferências salvas">Expandir Todos</button>
     <button class="btn btn-outline" onclick="exportInsights()">Exportar Insights</button>
+    <button class="btn btn-outline" onclick="exportHistoricoSKU()" id="btnHistSKU" title="Tabelão por SKU: sell-out e sell-in mês a mês (3 anos), Target 2026 e YTGO. Exporta Excel.">Histórico SKU (Excel)</button>
     <button class="btn btn-outline" onclick="exportOnePager()" id="btnOnePager" title="One-Pager Executivo · 1 slide A4">One-Pager</button>
     <button class="btn" onclick="exportPPTX()" id="btnPptx">Exportar PowerPoint</button>
   </div>
@@ -719,7 +720,7 @@ window.addEventListener('DOMContentLoaded', function(){
     <span class="nav-menu-label">Navegar:</span>
     <button type="button" class="nav-link" onclick="scrollToSection('kpiGrid')">KPIs</button>
     <button type="button" class="nav-link" onclick="scrollToSection('resumoCard')">Resumo Redes</button>
-    <button type="button" class="nav-link" onclick="scrollToSection('comparativoCard')">SI × SO</button>
+    <button type="button" class="nav-link" onclick="scrollToSection('comparativoCard')">Comp. SI x SO</button>
     <button type="button" class="nav-link" onclick="scrollToSection('insightsCard')">Insights</button>
     <button type="button" class="nav-link" onclick="scrollToSection('franquiaCard')">Franquia</button>
     <button type="button" class="nav-link" onclick="scrollToSection('tendenciaSystaneCard')">Systane</button>
@@ -728,7 +729,7 @@ window.addEventListener('DOMContentLoaded', function(){
     <button type="button" class="nav-link" onclick="scrollToSection('planoAcaoCard')">Ações</button>
     <button type="button" class="nav-link" onclick="scrollToSection('planoRecuperacaoCard')">Recuperação</button>
     <button type="button" class="nav-link" onclick="scrollToSection('chartYoYCard')">Evolução</button>
-    <button type="button" class="nav-link" onclick="scrollToSection('chartDifferenceCard')">SI vs SO</button>
+    <button type="button" class="nav-link" onclick="scrollToSection('chartDifferenceCard')">Evolução SIxSO</button>
     <button type="button" class="nav-link" onclick="scrollToSection('targetsCard')">Targets</button>
     <button type="button" class="nav-link" onclick="scrollToSection('tab-clientes')">Top 15</button>
     <button type="button" class="nav-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑ Topo</button>
@@ -2954,6 +2955,106 @@ function exportDecomposicaoExcel(){
     ? '_' + clientesSelecionados[0].substring(0,20).replace(/[^\w]/g,'_') : '';
   const nome = `Decomposicao_VPM_${mLabel}${cliFiltro}_${new Date().toISOString().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb, nome);
+}
+
+// ============================================================
+// TABELONA: Histórico por SKU (SO + SI mês a mês, 3 anos) + Target 2026 + YTGO
+// ============================================================
+function exportHistoricoSKU(){
+  if(typeof XLSX === 'undefined'){
+    alert('Biblioteca SheetJS (xlsx) não está carregada.\n\nEm PCs corporativos que bloqueiam CDN, coloque xlsx.full.min.js (ou xlsx.mini.min.js) na pasta libs_local/ e gere o HTML novamente.');
+    return;
+  }
+  if(!rawData || !rawData.length){ alert('Sem dados de sell-in carregados.'); return; }
+
+  // Métrica segue a seleção do dashboard (Unidades ou Reais)
+  const M = (metricaAtual === 'BRL') ? 'BRL' : 'UNID';
+  const siField = (M==='BRL') ? COLS.VALOR_BRL : COLS.VALOR_UNID;
+  const soField = (M==='BRL') ? 'BRL' : 'UNID';
+  const tgtField = (M==='BRL') ? 'target_brl' : 'target_unid';
+
+  // Anos: últimos 3 presentes em SI + SO + targets (garante 2026 se houver)
+  const anosSet = new Set();
+  rawData.forEach(r => anosSet.add(+r[COLS.ANO]));
+  (rawDataSellout||[]).forEach(r => anosSet.add(+r.ANO));
+  (targetsFinanceiros||[]).forEach(t => anosSet.add(+t.ano));
+  const anos3 = [...anosSet].filter(a => a && !isNaN(a)).sort((a,b)=>a-b).slice(-3);
+
+  const mAb = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const mesesCols = [];
+  anos3.forEach(ano => { for(let m=1;m<=12;m++) mesesCols.push({ano, mes:m, key:`${ano}-${m}`, lbl:`${mAb[m]}/${String(ano).slice(2)}`}); });
+
+  // Chave: franquia (upper) + produto normalizado (casa SO x SI x target)
+  const keyOf = (fr, prod) => `${String(fr||'').toUpperCase().trim()}||${normalizarNomeProduto(prod)}`;
+  const info = {}, siM = {}, soM = {}, tgt = {};
+
+  // Sell-in
+  rawData.forEach(r => {
+    const prod = r[COLS.PRODUTO]; if(!prod) return;
+    const fr = r[COLS.FRANQUIA];
+    const k = keyOf(fr, prod);
+    if(!info[k]) info[k] = {franquia: fr||'—', produto: prod};
+    if(!siM[k]) siM[k] = {};
+    const am = `${+r[COLS.ANO]}-${+r[COLS.MES_NUM]}`;
+    siM[k][am] = (siM[k][am]||0) + (+r[siField] || 0);
+  });
+  // Sell-out (respeita filtro de canal do dashboard)
+  forEachSellout(r => {
+    const prod = r.PRODUTO; if(!prod) return;
+    const fr = r.FRANQUIA;
+    const k = keyOf(fr, prod);
+    if(!info[k]) info[k] = {franquia: fr||'—', produto: prod};
+    if(!soM[k]) soM[k] = {};
+    const am = `${+r.ANO}-${+r.MES}`;
+    soM[k][am] = (soM[k][am]||0) + (+r[soField] || 0);
+  });
+  // Targets 2026
+  (targetsFinanceiros||[]).forEach(t => {
+    if(+t.ano !== 2026) return;
+    const k = keyOf(t.franquia, t.produto);
+    if(!info[k]) info[k] = {franquia: t.franquia||'—', produto: t.produto};
+    tgt[k] = (tgt[k]||0) + (+t[tgtField] || 0);
+  });
+
+  // Cabeçalho
+  const head = ['Franquia','Produto'];
+  mesesCols.forEach(c => head.push(`SO ${c.lbl}`));
+  mesesCols.forEach(c => head.push(`SI ${c.lbl}`));
+  head.push('Target 2026','Realizado SI 2026','YTGO (Saldo p/ Target)','Atingimento %');
+
+  const keys = Object.keys(info).sort((a,b) =>
+    (info[a].franquia||'').localeCompare(info[b].franquia||'') ||
+    (info[a].produto||'').localeCompare(info[b].produto||''));
+
+  const aoa = [head];
+  keys.forEach(k => {
+    const row = [info[k].franquia, info[k].produto];
+    mesesCols.forEach(c => { const v = soM[k] && soM[k][c.key]; row.push(v!==undefined && v!==null && v!==0 ? Math.round(v) : (soM[k]&&soM[k][c.key]===0?0:'')); });
+    mesesCols.forEach(c => { const v = siM[k] && siM[k][c.key]; row.push(v!==undefined && v!==null ? Math.round(v) : ''); });
+    const target2026 = tgt[k] || 0;
+    let realiz = 0; if(siM[k]) for(let m=1;m<=12;m++){ const v = siM[k][`2026-${m}`]; if(v!==undefined) realiz += v; }
+    const ytgo = target2026 - realiz;
+    const atng = target2026 ? (realiz/target2026*100) : '';
+    row.push(target2026?Math.round(target2026):'', Math.round(realiz), Math.round(ytgo), atng!==''?+atng.toFixed(1):'');
+    aoa.push(row);
+  });
+
+  if(keys.length === 0){ alert('Não há produtos para exportar com os dados atuais.'); return; }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Larguras de coluna
+  const colsW = [{wch:20},{wch:34}];
+  mesesCols.forEach(()=>colsW.push({wch:9}));
+  mesesCols.forEach(()=>colsW.push({wch:9}));
+  colsW.push({wch:14},{wch:16},{wch:18},{wch:14});
+  ws['!cols'] = colsW;
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:aoa.length-1, c:head.length-1}}) };
+
+  const wb = XLSX.utils.book_new();
+  const aba = `Histórico SKU (${M==='BRL'?'R$':'Unid'})`;
+  XLSX.utils.book_append_sheet(wb, ws, aba.substring(0,31));
+  const hoje = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Historico_SKU_SI_SO_Target_${M}_${hoje}.xlsx`);
 }
 
 // Helper de arredondamento pra 2 casas
@@ -6514,6 +6615,8 @@ function renderTargets(data, per){
     card.style.display = 'none';
     return;
   }
+  // Há targets → garantir que o card esteja visível (estava fixo em display:none)
+  card.style.display = '';
 
   // ============ Sell-in: calcular crescimento por produto ============
   const atual = somarPeriodo(data, per.periodoAtual, COLS.PRODUTO);
@@ -9290,7 +9393,7 @@ async function exportPPTX(){
       slide.addText([
         {text:'Business Use Only', options:{bold:true, color:'5B6B7E'}},
         {text:'·   Source: IQVIA (Sell-out) · SAP IRIS (Sell-in)', options:{color:'94A3B8'}},
-        {text:'   · v10.8 insight-fix', options:{color:'C7D2DE'}}
+        {text:'   · v10.9 nav-fix', options:{color:'C7D2DE'}}
       ], {
         x:4.6, y:7.12, w:8.43, h:0.3,
         fontSize:9, fontFace:'Arial', align:'right'
